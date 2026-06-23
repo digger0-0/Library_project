@@ -1,0 +1,6 @@
+- ./
+	- ./login
+	- ./search
+	- ./src
+		- /public
+		- /admin

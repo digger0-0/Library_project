@@ -1,0 +1,17 @@
+- ./
+	- View rental ranking
+	- View Announcement
+	- Search for books
+	- Login panel
+- ./announcement/
+	- View all announcement
+- ./u/
+	- Check renting record
+- ./admin/
+	- Check outdate rental
+	- Check user list
+	- Check rental list
+	- Rent book
+	- Return book
+	- Register book
+	- Add announcement

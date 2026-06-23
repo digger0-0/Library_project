@@ -1,0 +1,128 @@
+## Authentication
+- password process
+	- add salt to raw password
+	- encrypt password
+- login
+	- uid / uname + password
+	- process password
+	- search uid + password / uname + password in Users
+	- ok: sign session
+	- fail: redirect to ./login
+- sign session
+	- uid + session_start -> encrypt
+	- store in cookie as "token"
+	- set expire time
+	- save to db Users(session_key)
+- verify session
+	- First grade:
+		- get "token" from cookie -> decrypt
+		- check token expired + token exist
+	- Second grade:
+		- get "token" from cookie -> decrypt
+		- get Users(session_key) from db, compare the two
+		- check Users(role) from db
+	- Renew cookie expire time
+	- or, logout the user for invalid verification
+- logout
+	- Clear cookie "token"
+	- Empty Users(session_key)
+### Book search
+- Receive title / ISBN
+- Search title, search for ISBN in book_details
+- extract for each book:
+	- ISBN
+	- title
+	- author
+	- publisher
+	- full_classification
+	- emoji
+	- list of: book_number + status
+### Announcement
+- main
+	- Receive n, num of data; p page num;
+	- Return up to n announcement
+	- for each show all details
+- panel (static page)
+	- show 5 newest
+	- show title only
+	- with link to main page
+### Rental ranking (static component)
+- Monthly list
+- Directly return if corresponding html / pdf exist
+- else: Fetch uid, uname, num. of rental in the month, draw line by line, desc
+- save as html + pdf, return
+- naming: year + month
+### Resource routing
+- accessing file in "./src"
+- through an dynamic api for routing
+- "./src/public/":
+	- return the file directly
+	- keep the url
+- "./src/admin/":
+	- Second grade verify
+	- return file afterwards
+### Rental record (static component)
+- fetch user rental record as list:
+	- rental_id
+	- ISBN
+	- book_number
+	- rent_date
+	- due_date
+	- return_date
+- for not return + not expired + hv renew quota
+	- insert client component, just a renew [[Frontend (interactive page)#^a96d9b|button]]
+### Renew
+- Receive rental_id
+- check if can be renew
+- take renew
+- update db, refreash page
+### Outdate rental
+- receive n, number of field; p, current page
+- fetch p_th *  n overdue from book_details
+- return fields:
+	- ISBN
+	- book_number
+	- title
+	- rental_id
+	- uid
+	- uname
+	- rent_date
+	- days_overdue
+- return all overdue in one pdf
+### Rent book
+- receive:
+	- ISBN
+	- book_number
+	- uid (renter)
+	- uid (operator)
+- validate:
+	- second grade verificaion——uid (operator)
+	- validate ISBN, book_number, uid(renter)
+### Return book
+- receive:
+	-  ISBN
+	- book_number
+	- uid (renter)
+	- uid (operator)
+- validate:
+	- validate right uid (operator)
+	- validate ISBN, book_number, uid (renter) in rent status
+- work
+	- validate processor
+	- update status
+### Register book
+- receive:
+	-  ISBN char(17)
+	- title varchar(30)
+	- author varchar(20)
+	- publisher varchar(20)
+	- classification char(10)
+- Give book_number
+- validate classification
+- validate processor
+### Add announcement
+- receive:
+	- content
+	- admin info
+- verify identity
+- add to db

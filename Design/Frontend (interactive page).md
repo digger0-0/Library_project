@@ -1,0 +1,31 @@
+- Login
+	- uid / uname + password
+	- form submit
+	- pass two data to backend
+- Search for book
+	- use title / isbn
+	- form submit to backend
+	- display data received
+- Main announcement page
+	- Fetch announcement
+	- show content - date
+- Renew button ^a96d9b
+	- Send rental_id
+- Outdate rental
+	- form with num n, num p, button confirm
+	- get fields from backend
+	- generate list
+	- button for pdf
+- Return form
+	- ISBN
+	- book_number
+	- uid (renter)
+	- uid (operator)
+- Register form
+	-  ISBN
+	- title
+	- author
+	- publisher
+	- classification
+- Add announcement
+	- content

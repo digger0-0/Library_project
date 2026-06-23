@@ -1,0 +1,57 @@
+## Tables
+- Users
+	- uid char(10) primary key
+	- uname varchar(10) not null
+	- password varchar(8) not null
+	- role varchar(5)
+	- session_key char(30)
+		- uid + session_start -> encrypt
+- Books
+	- ISBN char(17)
+	- book_number char(2)
+	- title varchar(30)
+	- author varchar(20)
+	- publisher varchar(20)
+	- classification char(10)
+	- primary key(ISBN, book_number)
+- Classifications
+	- classification char(10) primary key
+	- description varchar(15) not null
+	- class_icon varchar(10) -> emoji
+- ISBNPrefix
+	- code char(9) primary key
+	- country varchar(20)
+- Rentals
+	- rental_id integer primary key AUTOINCREMENT,
+	- ISBN char(17),
+	- book_number char(2),
+	- uid char(8),
+	- rent_date datetime,
+	- due_date datetime,
+	- return_date datetime,
+	- renew integer
+- Announcements
+	- aid ingeter primary key AUTOINCREMENT
+	- adate datetime
+	- title varchar(10)
+	- content varchar(10)
+##  View
+- Book_details
+	- ISBN
+	- book_number
+	- title
+	- author
+	- publisher
+	- full_classification
+		- classification + description
+	- class_icon
+	- rental_id
+	- uid
+	- uname
+	- rent_date
+	- due_date
+	- return_date
+	- status
+		- 'on shelf', 'rent', 'overdue'
+	- days_overdue
+	- renew
