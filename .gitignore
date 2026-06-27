@@ -31,3 +31,8 @@ next-env.d.ts
 
 # SQLite database
 /library.db
+*.db-shm
+*.db-wal
+
+# Obsidian workspace config
+Design/.obsidian/

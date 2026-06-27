@@ -24,7 +24,10 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ]
+      ],
+      "@/component/*": [
+        "./src/component/*"
+      ],
     },
     "target": "ES2017"
   },

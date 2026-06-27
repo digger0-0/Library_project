@@ -1,9 +1,8 @@
 ## Tables
 - Users
-	- uid char(10) primary key
-	- uname varchar(10) not null
+	- user_id char(10) primary key
+	- username varchar(10) not null
 	- password varchar(8) not null
-	- role varchar(5)
 	- session_key char(30)
 		- uid + session_start -> encrypt
 - Books
@@ -31,8 +30,8 @@
 	- return_date datetime,
 	- renew integer
 - Announcements
-	- aid ingeter primary key AUTOINCREMENT
-	- adate datetime
+	- ann_id ingeter primary key AUTOINCREMENT
+	- ann_date datetime
 	- title varchar(10)
 	- content varchar(10)
 ##  View
