@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import  AnnouncementPanel from "@/component/AnnouncementPanel";
 import PageSelector from "@/component/PageSelector";
+import AnnouncementPanel from "@/component/AnnouncementPanel";
 
 export default async function AnnouncementPage({
   searchParams,

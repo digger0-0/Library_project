@@ -36,6 +36,16 @@ export default function PageSelector({
     [router, searchParams]
   );
 
+  const changePage = useCallback(
+    (change: number) => {
+      const p = page + change;
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", String(p));
+      router.replace(`?${params.toString()}`);
+    },
+    [router, searchParams]
+  );
+
   return (
     <div>
       <label>
@@ -48,7 +58,9 @@ export default function PageSelector({
       </label>
       <label>
         Page:
+        <button onClick={() => {changePage(-1)}}>{"<<"}</button>
         <input type="number" name="pageNumber" value={page} onChange={handlePageChange} min={1} />
+        <button onClick={() => {changePage(1)}}>{">>"}</button>
       </label>
     </div>
   );

@@ -48,7 +48,7 @@ export async function signSession(
 
     return session;
   }catch(err){
-    console.log("signSession: ", String(err), new Date());
+    console.log("signSession: ", String(err), new Date().toISOString());
     return null;
   }
 }
@@ -93,7 +93,7 @@ export async function verifySession(
 
     return { userId, role: role as "user" | "admin", createdAt };
   } catch(err){
-    console.log("verifySession: ", String(err), new Date());
+    console.log("verifySession: ", String(err), new Date().toISOString());
     return null;
   }
 }
@@ -132,7 +132,7 @@ export async function login(prevState: FormSate | undefined, formData: FormData)
     }
     return { success: false, message: "Incorrect username / password." };
   }catch(err){
-    console.log("login: ", String(err), new Date());
+    console.log("login: ", String(err), new Date().toISOString());
     return { success: false, message: "Internal error." }
   }
 }
@@ -155,7 +155,7 @@ export async function signup(prevState: FormSate| undefined, formData: FormData)
 
     return { success: true, message: "signup success" };
   }catch(err){
-    console.log("signup: ", String(err), new Date());
+    console.log("signup: ", String(err), new Date().toISOString());
     return { success: false, message: "Internal error." }
   }
 }

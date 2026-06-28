@@ -1,5 +1,5 @@
 - Login
-	- uid / uname + password
+	- user_id / username + password
 	- form submit
 	- pass two data to backend
 - Search for book
@@ -19,8 +19,8 @@
 - Return form
 	- ISBN
 	- book_number
-	- uid (renter)
-	- uid (operator)
+	- user_id (renter)
+	- user_id (operator)
 - Register form
 	-  ISBN
 	- title

@@ -4,7 +4,7 @@
 	- username varchar(10) not null
 	- password varchar(8) not null
 	- session_key char(30)
-		- uid + session_start -> encrypt
+		- user_id + session_start -> encrypt
 - Books
 	- ISBN char(17)
 	- book_number char(2)
@@ -24,8 +24,8 @@
 	- rental_id integer primary key AUTOINCREMENT,
 	- ISBN char(17),
 	- book_number char(2),
-	- uid char(8),
-	- rent_date datetime,
+	- user_id char(8),
+	- rental_date datetime,
 	- due_date datetime,
 	- return_date datetime,
 	- renew integer
@@ -45,8 +45,8 @@
 		- classification + description
 	- class_icon
 	- rental_id
-	- uid
-	- uname
+	- user_id
+	- username
 	- rent_date
 	- due_date
 	- return_date

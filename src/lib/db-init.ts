@@ -67,4 +67,46 @@ export async function initDB() {
       content   TEXT NOT NULL
     );
   `);
+
+  db.exec(`DROP VIEW IF EXISTS book_details;`);
+
+  db.exec(`
+    CREATE VIEW book_details AS
+    SELECT
+      b.isbn,
+      b.book_number,
+      b.title,
+      b.author,
+      b.publisher,
+      b.classification,
+      b.classification || ' - ' || c.description AS full_classification,
+      c.class_icon,
+
+      r.rental_id,
+      r.user_id,
+      u.username,
+      r.rental_date,
+      r.due_date,
+      r.return_date,
+
+      CASE
+        WHEN r.rental_id IS NULL       THEN 'on shelf'
+        WHEN r.return_date IS NOT NULL  THEN 'on shelf'
+        WHEN r.due_date < datetime('now') THEN 'overdue'
+        ELSE 'rent'
+      END AS status,
+
+      CASE
+        WHEN r.return_date IS NOT NULL THEN NULL
+        WHEN r.due_date < datetime('now')
+          THEN CAST(julianday('now') - julianday(r.due_date) AS INTEGER)
+        ELSE NULL
+      END AS days_overdue,
+
+      r.renew
+    FROM books b
+    LEFT JOIN classifications c ON b.classification = c.classification
+    LEFT JOIN rentals r ON b.isbn = r.isbn AND b.book_number = r.book_number
+    LEFT JOIN users u ON r.user_id = u.user_id;
+  `);
 }

@@ -3,13 +3,13 @@
 	- add salt to raw password
 	- encrypt password
 - login
-	- uid / uname + password
+	- user_id / username + password
 	- process password
-	- search uid + password / uname + password in Users
+	- search user_id + password / username + password in Users
 	- ok: sign session
 	- fail: redirect to ./login
 - sign session
-	- uid + session_start -> encrypt
+	- user_id + session_start -> encrypt
 	- store in cookie as "token"
 	- set expire time
 	- save to db Users(session_key)
@@ -49,7 +49,7 @@
 ### Rental ranking (static component)
 - Monthly list
 - Directly return if corresponding html / pdf exist
-- else: Fetch uid, uname, num. of rental in the month, draw line by line, desc
+- else: Fetch user_id, username, num. of rental in the month, draw line by line, desc
 - save as html + pdf, return
 - naming: year + month
 ### Resource routing
@@ -84,8 +84,8 @@
 	- book_number
 	- title
 	- rental_id
-	- uid
-	- uname
+	- user_id
+	- username
 	- rent_date
 	- days_overdue
 - return all overdue in one pdf
@@ -93,20 +93,20 @@
 - receive:
 	- ISBN
 	- book_number
-	- uid (renter)
-	- uid (operator)
+	- user_id (renter)
+	- user_id (operator)
 - validate:
-	- second grade verificaion——uid (operator)
-	- validate ISBN, book_number, uid(renter)
+	- second grade verificaion——user_id (operator)
+	- validate ISBN, book_number, user_id(renter)
 ### Return book
 - receive:
 	-  ISBN
 	- book_number
-	- uid (renter)
-	- uid (operator)
+	- user_id (renter)
+	- user_id (operator)
 - validate:
-	- validate right uid (operator)
-	- validate ISBN, book_number, uid (renter) in rent status
+	- validate right user_id (operator)
+	- validate ISBN, book_number, user_id (renter) in rent status
 - work
 	- validate processor
 	- update status

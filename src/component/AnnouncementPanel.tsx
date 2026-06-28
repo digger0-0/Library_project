@@ -38,7 +38,7 @@ export default async function AnnouncementPanel({
       </div>
     );
   }catch(err){
-    console.log("AnnouncementPanel: ", String(err), new Date());
+    console.log("AnnouncementPanel: ", String(err), new Date().toISOString());
     return (
       <div>
         <p>err: {String(err)}</p>

@@ -22,7 +22,7 @@ export default async function Page({
     </div>
     );
   }catch(err){
-    console.log("announcement/[ann_id] (Page): ", String(err), new Date());
+    console.log("announcement/[ann_id] (Page): ", String(err), new Date().toISOString());
     return (<div>
       <div>
         <p>err: {String(err)}</p>

@@ -49,17 +49,18 @@ export interface Announcement {
 // view
 
 export interface BookDetails extends Book {
-  classification_desc: string | null;
+  full_classification: string | null;
   class_icon: string | null;
   // Rental status (null = on shelf)
   rental_id: number | null;
-  uid: string | null;
+  user_id: number | null;
   username: string | null;
-  rent_date: string | null;
+  rental_date: string | null;
   due_date: string | null;
   return_date: string | null;
   status: "on shelf" | "rent" | "overdue";
   days_overdue: number | null;
+  renew: number | null;
 }
 
 // insert types
@@ -77,3 +78,11 @@ export interface SessionData {
   role: "user" | "admin";
   createdAt: number;
 }
+
+// Rental_details (extracted records)
+
+export type RentalRecord = Omit<BookDetails, "user_id" | "username">;
+export const rentalRecordFields: (keyof RentalRecord)[] = ["isbn", "book_number", "title", "author", "publisher", "classification", "full_classification", "class_icon", "rental_id", "rental_date", "due_date", "return_date", "status", "days_overdue", "renew"];
+
+export type BookSearchDetail = Omit<RentalRecord, "rental_date" | "return_date" | "renew" | "days_overdue">;
+export const BookSearchDetailFields: (keyof BookSearchDetail)[] = ["isbn", "book_number", "title", "author", "publisher", "classification", "full_classification", "class_icon", "rental_id", "due_date", "status"];
