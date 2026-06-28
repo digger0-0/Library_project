@@ -1,111 +1,79 @@
-"use client"
+import PageSelector from "@/component/PageSelector";
+import { RentalRecordsClient } from "@/component/RentalRecordsClient";
+import { verifySession } from "@/lib/auth";
+import { getDb } from "@/lib/db";
+import { RentalRecord } from "@/lib/types";
+import { Suspense } from "react";
 
-import { getRentalRecords, renewBook } from "@/lib/action";
-import { FormSate } from "@/lib/auth";
-import { RentalRecord, rentalRecordFields } from "@/lib/types";
-import { useActionState, useEffect, useState } from "react";
+export default async function rentalRecordsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ rowCount?: string; page?: string }>;
+}){
+  try{
+  const sp = await searchParams;
+  const rowCount = Number(sp.rowCount) || 10;
+  const page = Number(sp.page) || 1;
 
-export default function rentalRecordsPage(){
-  const [ rowCount, setRowCount ] = useState(5);
-  const [ page, setPage ] = useState(1)
-  const [ rentalRecords, setRentalRecords] = useState<RentalRecord[]>([]);
-  const [ tableState, setTableState ] = useState<FormSate>();
-  const [ rentalDetailId, setRentalDetailId ] = useState<number | null>(null);
+  const sessionData = await verifySession();
 
-  const [ renewState, renewAction, renewIsPending ] = useActionState(renewBook, undefined);
+  if(!sessionData){
+    return ( <div>Unauthorised access</div> );
+  }
+  
+  const db = getDb();
+  const rentalRecords = db.prepare(`
+    SELECT
+      r.isbn,
+      r.book_number,
+      b.title,
+      b.author,
+      b.publisher,
+      b.classification,
+      
+      b.classification || ' - ' || c.description AS full_classification,
+      c.class_icon,
 
-  const handleRowCountChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const r = Number(e.target.value);
-    setRowCount(r);
-  };
+      r.rental_id,
+      r.rental_date,
+      r.due_date,
+      r.return_date,
+      CASE
+        WHEN r.rental_id IS NULL       THEN 'on shelf'
+        WHEN r.return_date IS NOT NULL  THEN 'on shelf'
+        WHEN r.due_date < datetime('now') THEN 'overdue'
+        ELSE 'rent'
+      END AS status,
 
-  const handlePageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const r = Number(e.target.value);
-    setPage(r);
-  };
+      CASE
+        WHEN r.return_date IS NOT NULL THEN NULL
+        WHEN r.due_date < datetime('now')
+          THEN CAST(julianday('now') - julianday(r.due_date) AS INTEGER)
+        ELSE NULL
+      END AS days_overdue,
+      r.renew
+    FROM rentals r
+    LEFT JOIN books b ON r.isbn = b.isbn AND r.book_number = b.book_number
+    LEFT JOIN classifications c ON b.classification = c.classification
+    WHERE r.user_id = ?
+    ORDER BY r.due_date DESC
+    LIMIT ? OFFSET ?
+  `).all(
+    sessionData.userId,
+    rowCount,
+    (page - 1) * rowCount
+  ) as RentalRecord[];
 
-  useEffect(() => {
-    const fetchRentalRecords = async () => {
-      const res = await getRentalRecords(rowCount, page);
-      setRentalRecords(res.rentalRecords);
-      setTableState({ success: res.success, message: res.message });
-    }
-
-    fetchRentalRecords();
-  }, [rowCount, page]);
-
-  return (
-    <div>
+    return (
       <div>
-        <label>
-          Num. of Data:
-          <select name="rowCount" value={rowCount} onChange={handleRowCountChange}>
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={30}>30</option>
-          </select>
-        </label>
-        <label>
-          Page:
-          <input type="number" name="pageNumber" value={page} onChange={handlePageChange} min={1} />
-        </label>
+        <Suspense fallback={<div>Loading Records...</div>}>
+          <PageSelector/>
+        </Suspense>
+        <RentalRecordsClient rentalRecords={rentalRecords} />
       </div>
-      <div>
-        { !tableState?
-          <div>Loading</div>
-        :
-        <div>
-            <table>
-              <thead>
-              <tr><td>{tableState.message}</td></tr>
-              <tr><td>{renewState?.message}</td></tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Rental ID</td>
-                  <td>Title</td>
-                  <td>Status</td>
-                  <td>Rent Date</td>
-                  <td>Due Date</td>
-                  <td>Return Date</td>
-                  <td>Renew</td>
-                  <td>-</td>
-                </tr>
-                {rentalRecords.map((r, i) => (
-                  <tr key={i} onClick={() => {setRentalDetailId(i)}}>
-                    <td>{r.rental_id}</td>
-                    <td>{r.title}</td>
-                    <td>{r.status}</td>
-                    <td>{r.rental_date}</td>
-                    <td>{r.due_date}</td>
-                    <td>{r.return_date}</td>
-                    <td>{r.renew}</td>
-                    {(r.renew || 0) < 5 && (
-                      <td>
-                        <form action={renewAction}>
-                          <input type="number" name="rental_id" defaultValue={r.rental_id || -1} hidden/>
-                          <button type="submit" disabled={renewIsPending}>Renew</button>
-                        </form>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {rentalDetailId != null && (
-              <div>
-                <button onClick={() => {setRentalDetailId(null)}}>X</button>
-                {rentalRecordFields.map((f, i) => (
-                  <p key={i}>
-                  <label>{f.toString()}{": "}</label>
-                  <label>{rentalRecords[rentalDetailId][f]}</label>
-                  </p>
-                ))}
-              </div>
-            )}
-          </div>
-        }
-      </div>
-    </div>
-  );
+    );
+  }catch(err){
+    console.log("rentalRecordsPage: ", err, new Date().toISOString());
+    return (<div>Internal error</div>);
+  }
 }

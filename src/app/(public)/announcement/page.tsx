@@ -13,7 +13,7 @@ export default async function AnnouncementPage({
 
   return (
     <div>
-      <Suspense fallback={<div>Loading controls...</div>}>
+      <Suspense fallback={<div>Loading announcements...</div>}>
         <PageSelector initialRowCount={rowCount} initialPage={page} />
       </Suspense>
       <AnnouncementPanel rowCount={rowCount} page={page} full={false} />

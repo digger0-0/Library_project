@@ -1,9 +1,10 @@
 'use server'
 
+import { revalidatePath } from "next/cache";
 import { verifySession } from "./auth";
 import { FormSate } from "./auth";
 import { getDb } from "./db";
-import { BookDetails, Rental, RentalRecord, User } from "./types";
+import { BookDetails, Rental, User } from "./types";
 
 export async function insertAnnouncement(formState: FormSate | undefined, formData: FormData): Promise<FormSate>{
   try{
@@ -189,7 +190,7 @@ export async function renewBook(formState: FormSate | undefined, formData: FormD
     // verify rental status
     if(!rental){
       return { success: false, message: "Invalid rental_id" };
-    }else if(rental.renew > (Number(process.env.RENEWAL_LIMIT) || 5)){
+    }else if(rental.renew >= (Number(process.env.RENEWAL_LIMIT) || 5)){
       return { success: false, message: "Renew limit reached" };
     }else if(rental.due_date < sqliteNow()){
       return { success: false, message: "Rental overdue" };
@@ -206,76 +207,10 @@ export async function renewBook(formState: FormSate | undefined, formData: FormD
       rental.renew + 1,
       rental_id
     );
-
+    revalidatePath("/user/rentalRecords");
     return { success: true, message: "Book renewed" };
   }catch(err){
     console.log("renewBook: ", err, new Date().toISOString());
     return { success: false, message: `Book renew failed.\nerr: ${err}` };
-  }
-}
-
-export async function getRentalRecords(
-  rowCount: number,
-  page: number,
-): Promise<{
-  success: boolean,
-  message: string,
-  rentalRecords: RentalRecord[]
-}>{
-  try{
-    const sessionData = await verifySession();
-
-    if(!sessionData){
-      return { success: false, message: "Unauthoried  access", rentalRecords: [] };
-    }
-    
-    const db = getDb();
-    const rentalRecords = db.prepare(`
-      SELECT
-        r.isbn,
-        r.book_number,
-        b.title,
-        b.author,
-        b.publisher,
-        b.classification,
-        
-        b.classification || ' - ' || c.description AS full_classification,
-        c.class_icon,
-
-        r.rental_id,
-        r.rental_date,
-        r.due_date,
-        r.return_date,
-        CASE
-          WHEN r.rental_id IS NULL       THEN 'on shelf'
-          WHEN r.return_date IS NOT NULL  THEN 'on shelf'
-          WHEN r.due_date < datetime('now') THEN 'overdue'
-          ELSE 'rent'
-        END AS status,
-
-        CASE
-          WHEN r.return_date IS NOT NULL THEN NULL
-          WHEN r.due_date < datetime('now')
-            THEN CAST(julianday('now') - julianday(r.due_date) AS INTEGER)
-          ELSE NULL
-        END AS days_overdue,
-        r.renew
-      FROM rentals r
-      LEFT JOIN books b ON r.isbn = b.isbn AND r.book_number = b.book_number
-      LEFT JOIN classifications c ON b.classification = c.classification
-      WHERE r.user_id = ?
-      ORDER BY r.due_date DESC
-      LIMIT ? OFFSET ?
-    `).all(
-      sessionData.userId,
-      rowCount,
-      (page - 1) * rowCount
-    ) as RentalRecord[];
-
-    return { success: true, message: "Rental records fetched", rentalRecords: rentalRecords };
-
-  }catch(err){
-    console.log("getRentalRecords: ", err, new Date().toISOString());
-    return { success: false, message: `Rental records get failed.\nerr: ${err}`, rentalRecords: [] };
   }
 }

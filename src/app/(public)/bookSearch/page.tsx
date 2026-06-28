@@ -38,7 +38,7 @@ export default async function bookSearchPage({
     return (
       <div>
         <BookSearchBar/>
-        <Suspense fallback={<div>Loading controls...</div>}>
+        <Suspense fallback={<div>Loading Data...</div>}>
           <PageSelector initialRowCount={rowCount} initialPage={page} />
         </Suspense>
         <BookSearchClient books={bookSearchDetails}/>
