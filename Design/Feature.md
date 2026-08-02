@@ -9,12 +9,12 @@
 - ./announcement/
 	- View all announcement √
 - ./user/
-	- Check renting record
-	- renew book
+	- Check renting record √
+	- renew book √
 - ./admin/
-	- Check outdate rental
+	- Check outdate rental √
 	- Check user list
-	- Check rental list
+	- Check rental list √
 	- Rent book √
 	- Return book √
 	- Register book √

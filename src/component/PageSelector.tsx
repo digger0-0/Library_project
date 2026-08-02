@@ -6,14 +6,20 @@ import { useCallback } from "react";
 export default function PageSelector({
   initialRowCount = 10,
   initialPage = 1,
+  checkBox = [],
 }: {
   initialRowCount?: number;
   initialPage?: number;
+  checkBox?: string[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rowCount = Number(searchParams.get("rowCount")) || initialRowCount;
   const page = Number(searchParams.get("page")) || initialPage;
+  const checkBoxes: Map<string, unknown> = new Map<string, unknown>();
+  checkBox.forEach((s) => {
+    checkBoxes.set(s, searchParams.get(s)?.toString());
+  });
 
   const handleRowCountChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -38,9 +44,20 @@ export default function PageSelector({
 
   const changePage = useCallback(
     (change: number) => {
-      const p = page + change;
+      const p = Math.max(1, page + change);
       const params = new URLSearchParams(searchParams.toString());
       params.set("page", String(p));
+      router.replace(`?${params.toString()}`);
+    },
+    [router, searchParams]
+  );
+
+  const handleCheckBoxChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const checked = e.target.checked || false;
+      const name = e.target.name;
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(name, String(checked));
       router.replace(`?${params.toString()}`);
     },
     [router, searchParams]
@@ -58,10 +75,21 @@ export default function PageSelector({
       </label>
       <label>
         Page:
-        <button onClick={() => {changePage(-1)}}>{"<<"}</button>
+        <button onClick={() => {changePage(-1)}} disabled={page<=1}>{"<<"}</button>
         <input type="number" name="pageNumber" value={page} onChange={handlePageChange} min={1} />
         <button onClick={() => {changePage(1)}}>{">>"}</button>
       </label>
+      {Array.from(checkBoxes.entries()).map((val, i) => (
+        <label key={i}>
+          {val[0]}{": "}
+          <input
+            type="checkbox"
+            name={val[0]}
+            defaultChecked={val[1] == "true"}
+            onChange={handleCheckBoxChange}
+          />
+        </label>
+      ))}
     </div>
   );
 }
