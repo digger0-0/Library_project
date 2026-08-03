@@ -1,16 +1,20 @@
 'use client'
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 
 export default function PageSelector({
   initialRowCount = 10,
   initialPage = 1,
   checkBox = [],
+  rowCounts = [5, 10, 30],
+  recordCount = Infinity,
 }: {
   initialRowCount?: number;
   initialPage?: number;
   checkBox?: string[];
+  rowCounts?: number[];
+  recordCount?: number;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -20,6 +24,16 @@ export default function PageSelector({
   checkBox.forEach((s) => {
     checkBoxes.set(s, searchParams.get(s)?.toString());
   });
+  const pageRange = [1, Math.ceil(recordCount/rowCount)]
+
+  useEffect(() => {
+    if(pageRange[1] < page){
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", pageRange[1].toString());
+      router.push(`?${params.toString()}`);
+    }
+  }, [recordCount, rowCount, page, searchParams, router]);
+  
 
   const handleRowCountChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -44,7 +58,8 @@ export default function PageSelector({
 
   const changePage = useCallback(
     (change: number) => {
-      const p = Math.max(1, page + change);
+      let p = page + change;
+      p = Math.min(pageRange[1], Math.max(pageRange[0], p));
       const params = new URLSearchParams(searchParams.toString());
       params.set("page", String(p));
       router.replace(`?${params.toString()}`);
@@ -68,16 +83,16 @@ export default function PageSelector({
       <label>
         Num. of Data:
         <select name="rowCount" value={rowCount} onChange={handleRowCountChange}>
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={30}>30</option>
+          {rowCounts.map((v, i) => (
+            <option key={i} value={v}>{v}</option>
+          ))}
         </select>
       </label>
       <label>
         Page:
         <button onClick={() => {changePage(-1)}} disabled={page<=1}>{"<<"}</button>
         <input type="number" name="pageNumber" value={page} onChange={handlePageChange} min={1} />
-        <button onClick={() => {changePage(1)}}>{">>"}</button>
+        <button onClick={() => {changePage(1)}} disabled={page>=pageRange[1]}>{">>"}</button>
       </label>
       {Array.from(checkBoxes.entries()).map((val, i) => (
         <label key={i}>

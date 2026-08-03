@@ -4,7 +4,7 @@ export interface User {
   user_id: number;
   username: string;
   password: string;
-  role: "user" | "admin";
+  role: Role;
   session: string | null;
 }
 
@@ -75,7 +75,7 @@ export type NewAnnouncement = Omit<Announcement, "ann_id" | "ann_date">;
 
 export interface SessionData {
   userId: number;
-  role: "user" | "admin";
+  role: Role;
   createdAt: number;
 }
 
@@ -86,3 +86,11 @@ export const rentalRecordFields: (keyof RentalRecord)[] = ["isbn", "book_number"
 
 export type BookSearchDetail = Omit<RentalRecord, "rental_date" | "return_date" | "renew" | "days_overdue">;
 export const BookSearchDetailFields: (keyof BookSearchDetail)[] = ["isbn", "book_number", "title", "author", "publisher", "classification", "full_classification", "class_icon", "rental_id", "due_date", "status"];
+
+export interface UserRecord extends User {
+  overdue_count: number;
+}
+export const userRecordFields: (keyof UserRecord)[] = ["user_id", "username", "role", "overdue_count"];
+
+export type Role = "admin" | "user";
+export const Roles: string[] = ["admin", "user"];

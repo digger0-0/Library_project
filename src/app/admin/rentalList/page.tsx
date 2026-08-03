@@ -53,10 +53,17 @@ export default async function RentalListPage({
       (page - 1) * rowCount
     ) as RentalRecord[];
 
+    const recordCount = (
+      db.prepare(`
+        SELECT COUNT(*) AS cnt
+        FROM book_details ` + (overdue? ` WHERE status = 'overdue' `: "")
+      ).get() as {cnt: number}
+    ).cnt as number;
+
     return (
       <div>
         <Suspense fallback={<div>Loading records...</div>}>
-          <PageSelector checkBox={["overdue"]}/>
+          <PageSelector checkBox={["overdue"]} recordCount={recordCount}/>
         </Suspense>
         <RentalListClient rentalRecords={rentalRecords} />
       </div>

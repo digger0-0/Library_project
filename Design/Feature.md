@@ -1,7 +1,7 @@
 - ./
 	- View rental ranking 
-	- View Announcement
-	- Search for books
+	- View Announcement √
+	- Search for books √
 - ./login
 	- Login panel √
 - ./signup
@@ -13,7 +13,7 @@
 	- renew book √
 - ./admin/
 	- Check outdate rental √
-	- Check user list
+	- Check user list √
 	- Check rental list √
 	- Rent book √
 	- Return book √

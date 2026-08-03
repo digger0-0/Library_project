@@ -1,9 +1,10 @@
 'use server'
 
 import crypto from "node:crypto";
-import type { SessionData, User } from "./types";
+import { Roles, type Role, type SessionData, type User } from "./types";
 import { getDb } from "./db";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 
 const SECRET = crypto
   .createHash("sha256")
@@ -18,7 +19,7 @@ const MAXAGEMS = 24 * 60 * 60 * 1000;
 
 export async function signSession(
   userId: number,
-  role: "user" | "admin"
+  role: Role
 ): Promise<string | null>{
   try{
     // prep
@@ -91,7 +92,7 @@ export async function verifySession(
       if(db_sessionKey.session != session) return null;
     }
 
-    return { userId, role: role as "user" | "admin", createdAt };
+    return { userId, role: role as Role, createdAt };
   } catch(err){
     console.log("verifySession: ", String(err), new Date().toISOString());
     return null;
@@ -156,6 +157,36 @@ export async function signup(prevState: FormSate| undefined, formData: FormData)
     return { success: true, message: "signup success" };
   }catch(err){
     console.log("signup: ", String(err), new Date().toISOString());
+    return { success: false, message: "Internal error." }
+  }
+}
+
+export async function changeRole(userId: number, targetRole: Role): Promise<FormSate>{
+  try{
+    const sessionData = await verifySession(true);
+
+    if(!sessionData || sessionData.role != "admin"){
+      return { success: false, message: "unauthorised access" }
+    }
+
+    if(!Roles.includes(targetRole)){
+      return { success: false, message: "Invalid role" };
+    }
+
+    const db = getDb();
+    // validate userId
+    const userRow = db.prepare(`SELECT COUNT(*) as count FROM users WHERE user_id = ?`).get(userId) as { count: number };
+    if(!userRow.count){
+      return { success: false, message: "Invalid userId"}
+    }
+
+    // update
+    db.prepare(`UPDATE users SET role = ? WHERE user_id = ?`).run(targetRole, userId);
+
+    revalidatePath("/admin/userList");
+    return { success: true, message: `role change on user:${userId} success` }
+  }catch(err){
+    console.log("changeRole: ", String(err), new Date().toISOString());
     return { success: false, message: "Internal error." }
   }
 }
