@@ -106,7 +106,16 @@ export async function initDB() {
       r.renew
     FROM books b
     LEFT JOIN classifications c ON b.classification = c.classification
-    LEFT JOIN rentals r ON b.isbn = r.isbn AND b.book_number = r.book_number
+    -- one row per book copy: pick the most recent ACTIVE (unreturned) rental
+    LEFT JOIN rentals r ON r.rental_id = (
+      SELECT r2.rental_id
+      FROM rentals r2
+      WHERE r2.isbn = b.isbn
+        AND r2.book_number = b.book_number
+        AND r2.return_date IS NULL
+      ORDER BY r2.rental_id DESC
+      LIMIT 1
+    )
     LEFT JOIN users u ON r.user_id = u.user_id;
   `);
 }

@@ -11,6 +11,9 @@
 # production
 /build
 
+# portable build output
+/dist/
+
 # misc
 .DS_Store
 *.pem
