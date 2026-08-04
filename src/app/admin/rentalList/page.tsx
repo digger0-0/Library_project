@@ -25,26 +25,38 @@ export default async function RentalListPage({
     const db = getDb();
     const stmt = `
       SELECT
-        isbn,
-        book_number,
-        title,
-        author,
-        publisher,
-        classification,
+        bd.isbn,
+        bd.book_number,
+        bd.title,
+        bd.author,
+        bd.publisher,
+        bd.classification,
         
-        full_classification,
-        class_icon,
+        bd.full_classification,
+        bd.class_icon,
 
-        rental_id,
-        rental_date,
-        due_date,
-        return_date,
-        status,
-        days_overdue,
-        renew
-      FROM book_details
-      ` + (overdue? `WHERE status = 'overdue'`: "") + `
-      ORDER BY due_date DESC
+        r.rental_id,
+        r.rental_date,
+        r.due_date,
+        r.return_date,
+        CASE
+          WHEN r.rental_id IS NULL       THEN 'on shelf'
+          WHEN r.return_date IS NOT NULL  THEN 'on shelf'
+          WHEN r.due_date < datetime('now') THEN 'overdue'
+          ELSE 'rent'
+        END AS status,
+        
+        CASE
+          WHEN r.return_date IS NOT NULL THEN NULL
+          WHEN r.due_date < datetime('now')
+            THEN CAST(julianday('now') - julianday(r.due_date) AS INTEGER)
+          ELSE NULL
+        END AS days_overdue,
+        r.renew
+      FROM rentals r, book_details bd
+        WHERE r.isbn = bd.isbn AND r.book_number = bd.book_number 
+      ` + (overdue? `AND status = 'overdue' `: "") + `
+      ORDER BY r.due_date DESC
       LIMIT ? OFFSET ?
     `;
     const prep = db.prepare(stmt)
@@ -55,8 +67,17 @@ export default async function RentalListPage({
 
     const recordCount = (
       db.prepare(`
-        SELECT COUNT(*) AS cnt
-        FROM book_details ` + (overdue? ` WHERE status = 'overdue' `: "")
+        SELECT
+          COUNT(*) AS cnt,
+          CASE
+            WHEN r.rental_id IS NULL       THEN 'on shelf'
+            WHEN r.return_date IS NOT NULL  THEN 'on shelf'
+            WHEN r.due_date < datetime('now') THEN 'overdue'
+            ELSE 'rent'
+          END AS status
+        FROM rentals r, book_details bd
+        WHERE r.isbn = bd.isbn AND r.book_number = bd.book_number
+      ` + (overdue? ` AND status = 'overdue' `: "")
       ).get() as {cnt: number}
     ).cnt as number;
 
