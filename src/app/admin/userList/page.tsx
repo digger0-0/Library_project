@@ -38,7 +38,7 @@ export default async function UserListPage({
         ) AS overdue_count
       FROM users u
       ORDER BY` + (
-        rankOverdue? ` overdue_count, `: ""
+        rankOverdue? ` overdue_count DESC, `: ""
       ) +
       `  user_id
       LIMIT ? OFFSET ?

@@ -64,10 +64,14 @@ export default async function rentalRecordsPage({
     (page - 1) * rowCount
   ) as RentalRecord[];
 
+  const { recordCount } = db.prepare(`
+    SELECT COUNT(*) as recordCount FROM rentals WHERE user_id = ?
+  `).get(sessionData.userId) as { recordCount: number };
+
     return (
       <div>
         <Suspense fallback={<div>Loading Records...</div>}>
-          <PageSelector/>
+          <PageSelector recordCount={recordCount}/>
         </Suspense>
         <RentalRecordsClient rentalRecords={rentalRecords} />
       </div>

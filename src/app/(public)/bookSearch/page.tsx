@@ -12,7 +12,7 @@ export default async function bookSearchPage({
 }){
   try{
     const sp = await searchParams;
-    const keyword = sp.keyword?.trim();
+    const keyword = sp.keyword?.trim() ?? "";
     const rowCount = Number(sp.rowCount) || 5;
     const page = Number(sp.page) || 1;
 
@@ -34,12 +34,18 @@ export default async function bookSearchPage({
       WHERE isbn like ? OR title like ?
       LIMIT ? OFFSET ?
       `).all(`%${keyword}%`, `%${keyword}%`, rowCount, (page - 1) * rowCount)as BookSearchDetail[];
+    const { recordCount } = db.prepare(`
+      SELECT
+        COUNT(*) AS recordCount
+      FROM book_details
+      WHERE isbn like ? OR title like ?
+      `).get(`%${keyword}%`, `%${keyword}%`)as { recordCount: number };
 
     return (
       <div>
         <BookSearchBar/>
         <Suspense fallback={<div>Loading Data...</div>}>
-          <PageSelector initialRowCount={rowCount} initialPage={page} />
+          <PageSelector initialRowCount={rowCount} initialPage={page} recordCount={recordCount}/>
         </Suspense>
         <BookSearchClient books={bookSearchDetails}/>
       </div>

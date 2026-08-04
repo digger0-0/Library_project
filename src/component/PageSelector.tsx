@@ -24,7 +24,7 @@ export default function PageSelector({
   checkBox.forEach((s) => {
     checkBoxes.set(s, searchParams.get(s)?.toString());
   });
-  const pageRange = [1, Math.ceil(recordCount/rowCount)]
+  const pageRange = [1, Math.max(1, Math.ceil(recordCount/rowCount))]
 
   useEffect(() => {
     if(pageRange[1] < page){
