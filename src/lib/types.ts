@@ -84,8 +84,8 @@ export interface SessionData {
 export type RentalRecord = Omit<BookDetails, "user_id" | "username">;
 export const rentalRecordFields: (keyof RentalRecord)[] = ["isbn", "book_number", "title", "author", "publisher", "classification", "full_classification", "class_icon", "rental_id", "rental_date", "due_date", "return_date", "status", "days_overdue", "renew"];
 
-export type BookSearchDetail = Omit<RentalRecord, "rental_date" | "return_date" | "renew" | "days_overdue">;
-export const BookSearchDetailFields: (keyof BookSearchDetail)[] = ["isbn", "book_number", "title", "author", "publisher", "classification", "full_classification", "class_icon", "rental_id", "due_date", "status"];
+export type BookSearchDetail = Omit<RentalRecord, "rental_id" | "rental_date" | "return_date" | "renew" | "days_overdue">;
+export const BookSearchDetailFields: (keyof BookSearchDetail)[] = ["isbn", "book_number", "title", "author", "publisher", "classification", "full_classification", "class_icon", "due_date", "status"];
 
 export interface UserRecord extends User {
   overdue_count: number;

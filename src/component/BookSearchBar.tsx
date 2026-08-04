@@ -1,29 +1,21 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback } from "react";
 
 export function BookSearchBar(){
   const router = useRouter();
   const searchParams = useSearchParams();
   const keyword = searchParams.get("keyword") || "";
-  const rowCount = Number(searchParams.get("rowCount"));
-  const page = Number(searchParams.get("page"));
 
-  // const handleSubmit = useCallback(
-  //   (formData: FormData) => {
-  //     const params = new URLSearchParams(searchParams.toString());
-  //     params.set("keyword", formData.get("keyword")?.toString().trim() || "");
-  //     router.replace(`?${params.toString()}`);
-  //   },
-  //   [router, searchParams]
-  // );
-  const handleSubmit = (formData: FormData) => {
-    const keyword = formData.get("keyword")?.toString().trim() || "";
-    const url = `/bookSearch?keyword=${encodeURIComponent(keyword)}`
-      + (rowCount && `&rowCount=${rowCount}`)
-      + (page && `&page=${page}`);
-    router.push(url);
-  };
+  const handleSubmit = useCallback(
+    (formData: FormData) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("keyword", formData.get("keyword")?.toString().trim() || "");
+      router.push(`/bookSearch/?${params.toString()}`);
+    },
+    [router, searchParams]
+  );
 
   return (
     <form action={handleSubmit}>

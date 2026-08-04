@@ -7,7 +7,7 @@ export function BookSearchClient(
   { books }:
   { books: BookSearchDetail[] }
 ){
-  const [ detailId, setDetailId ] = useState<number | null>(null)
+  const [ detailId, setDetailId ] = useState<number | null>(null);
 
   if(books.length == 0){
     return (
@@ -21,12 +21,18 @@ export function BookSearchClient(
     <div>
       <table>
         <tbody>
+          <tr>
+            { BookSearchDetailFields.map((f, i) => (
+              <td key={i}>{f.toString()}</td>
+            ))}
+          </tr>
           { books.map((book, i) => (
             <tr key={i} onClick={() => setDetailId(i)}>
-              <td>{book.title}</td>
-              <td>{book.isbn}</td>
-              <td>{book.full_classification}</td>
-              <td>{book.status}</td>
+              { 
+                BookSearchDetailFields.map((f, j) => (
+                  <td key={j}>{book[f]}</td>
+                ))
+              }
             </tr>
           ))}
         </tbody>
