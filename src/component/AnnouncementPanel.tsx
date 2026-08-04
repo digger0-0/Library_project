@@ -3,6 +3,8 @@ import { getDb } from "@/lib/db";
 import { Announcement } from "@/lib/types";
 import { InsertAnnouncementPanel } from "./admin/InsertAnnouncementPanel";
 import { AnnouncementThumbnail } from "./AnnouncementThumbnail";
+import { Suspense } from "react";
+import PageSelector from "./PageSelector";
 
 export default async function AnnouncementPanel({
   rowCount = 10,
@@ -17,16 +19,18 @@ export default async function AnnouncementPanel({
     // fetch the announcements
     const db = getDb();
     let rows: Announcement[];
-    if(page == 1){
-      rows = db.prepare("SELECT * FROM announcements LIMIT ?").all(rowCount) as Announcement[];
-    }else{
-      rows = db.prepare("SELECT * FROM announcements LIMIT ? OFFSET ?").all(rowCount, (page-1)*rowCount) as Announcement[];
-    }
+    rows = db.prepare("SELECT * FROM announcements LIMIT ? OFFSET ?").all(rowCount, (page-1)*rowCount) as Announcement[];
+    const { recordCount } = db.prepare("SELECT COUNT(*) AS recordCount FROM announcements").get() as { recordCount: number }
     // add if admin
     const sessionData = await verifySession();
 
     return(
       <div>
+        { full && (
+          <Suspense fallback={<div>Loading announcements...</div>}>
+            <PageSelector initialRowCount={rowCount} initialPage={page} recordCount={recordCount} />
+          </Suspense>
+        )}
         {rows.length? rows.map((announcement) => {
           return (
             <AnnouncementThumbnail key={announcement.ann_id} announcement={announcement} full={full}/>
@@ -34,7 +38,9 @@ export default async function AnnouncementPanel({
         }):
           <p>no announcement</p>
         }
-        { sessionData?.role == "admin" && <InsertAnnouncementPanel/> }
+        { sessionData?.role == "admin" && full && (
+          <InsertAnnouncementPanel/>
+        )}
       </div>
     );
   }catch(err){

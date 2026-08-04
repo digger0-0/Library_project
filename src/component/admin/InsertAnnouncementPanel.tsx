@@ -8,6 +8,7 @@ export function InsertAnnouncementPanel(){
 
   return (
     <div>
+      <p>Insert Announcement</p>
       <form action={formAction}>
         <label>Title</label><br/>
         <input type="text" name="title" required/><br/>

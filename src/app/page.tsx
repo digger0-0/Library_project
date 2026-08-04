@@ -1,3 +1,8 @@
+import AnnouncementPanel from "@/component/AnnouncementPanel";
+import { BookSearchBar } from "@/component/BookSearchBar";
+import { RentalRankingContainer } from "@/component/RentalRankingContainer";
+import { Suspense } from "react";
+
 export default function Home() {
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
@@ -6,6 +11,11 @@ export default function Home() {
         <p className="text-lg text-gray-600 dark:text-gray-400">
           Welcome to the library management app.
         </p>
+        <Suspense fallback={<div>Loading</div>}>
+          <BookSearchBar/>
+          <AnnouncementPanel rowCount={5} page={1} full={false}/>
+          <RentalRankingContainer/>
+        </Suspense>
       </main>
     </div>
   );
