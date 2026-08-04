@@ -94,3 +94,10 @@ export const userRecordFields: (keyof UserRecord)[] = ["user_id", "username", "r
 
 export type Role = "admin" | "user";
 export const Roles: string[] = ["admin", "user"];
+
+export type RentalRanking = {username: string, rentalCount: number};
+export interface RentalRankings {
+  monthly: RentalRanking[];
+  yearly: RentalRanking[];
+};
+export const RentalRankingFields: (keyof RentalRankings)[] = ["monthly", "yearly"];
