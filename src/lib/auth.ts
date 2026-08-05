@@ -3,7 +3,7 @@
 import crypto from "node:crypto";
 import { Roles, type Role, type SessionData, type User } from "./types";
 import { getDb } from "./db";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 const SECRET = crypto
@@ -39,9 +39,14 @@ export async function signSession(
     // write to db
     db.prepare('UPDATE users SET session = ? WHERE user_id = ?').run(session, userId);
     // write to cookie
+    // Only mark the cookie Secure when actually served over HTTPS (e.g. behind
+    // the devtunnel). Over plain http:// (localhost or LAN IP on the test
+    // machine) a Secure cookie is rejected by the browser, so the session is
+    // never stored and the login state is lost.
+    const isHttps = (await headers()).get("x-forwarded-proto") === "https";
     cookieStore.set('session', session, {
       httpOnly: true,
-      secure: true,
+      secure: isHttps,
       expires: expiresAt,
       sameSite: "lax",
       path: '/'
