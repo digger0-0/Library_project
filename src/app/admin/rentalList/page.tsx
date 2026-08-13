@@ -2,6 +2,7 @@ import { RentalListClient } from "@/component/admin/RentalListClient";
 import PageSelector from "@/component/PageSelector";
 import { verifySession } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
 import { RentalRecord } from "@/lib/types";
 import { Suspense } from "react";
 
@@ -35,16 +36,27 @@ export default async function RentalListPage({
         bd.full_classification,
         bd.class_icon,
 
+        r.user_id,
+        u.username,
+
         r.rental_id,
         r.rental_date,
         r.due_date,
         r.return_date,
         CASE
           WHEN r.rental_id IS NULL       THEN 'on shelf'
-          WHEN r.return_date IS NOT NULL  THEN 'on shelf'
+          WHEN r.return_date <= r.due_date THEN 'on shelf'
+          WHEN r.due_date < datetime('now') AND r.return_date IS NOT NULL  THEN 'overdue (returned)'
           WHEN r.due_date < datetime('now') THEN 'overdue'
           ELSE 'rent'
         END AS status,
+
+        CASE
+          WHEN r.rental_id IS NULL       THEN 'false'
+          WHEN r.return_date <= r.due_date THEN 'false'
+          WHEN r.due_date < datetime('now') THEN 'true'
+          ELSE 'false'
+        END AS isOverdue,
         
         CASE
           WHEN r.return_date IS NOT NULL THEN NULL
@@ -53,9 +65,11 @@ export default async function RentalListPage({
           ELSE NULL
         END AS days_overdue,
         r.renew
-      FROM rentals r, book_details bd
-        WHERE r.isbn = bd.isbn AND r.book_number = bd.book_number 
-      ` + (overdue? `AND status = 'overdue' `: "") + `
+      FROM rentals r
+      JOIN book_details bd ON r.isbn = bd.isbn AND r.book_number = bd.book_number
+      LEFT JOIN users u ON r.user_id = u.user_id
+      WHERE 1=1
+      ` + (overdue? `AND (isOverdue = 'true') `: "") + `
       ORDER BY r.due_date DESC
       LIMIT ? OFFSET ?
     `;
@@ -64,20 +78,20 @@ export default async function RentalListPage({
       rowCount,
       (page - 1) * rowCount
     ) as RentalRecord[];
+    logger.debug("rental records fetched", { fn: "RentalListPage", count: rentalRecords.length });
 
     const recordCount = (
       db.prepare(`
         SELECT
           COUNT(*) AS cnt,
           CASE
-            WHEN r.rental_id IS NULL       THEN 'on shelf'
-            WHEN r.return_date IS NOT NULL  THEN 'on shelf'
-            WHEN r.due_date < datetime('now') THEN 'overdue'
-            ELSE 'rent'
-          END AS status
+            WHEN r.rental_id IS NULL       THEN 'false'
+            WHEN r.return_date <= r.due_date THEN 'false'
+            WHEN r.due_date < datetime('now') THEN 'true'
+          END AS isOverdue
         FROM rentals r, book_details bd
         WHERE r.isbn = bd.isbn AND r.book_number = bd.book_number
-      ` + (overdue? ` AND status = 'overdue' `: "")
+      ` + (overdue? `AND (isOverdue = 'true') `: "")
       ).get() as {cnt: number}
     ).cnt as number;
 
@@ -90,7 +104,9 @@ export default async function RentalListPage({
       </div>
     );
   }catch(err){
-    console.log("RentalListPage: ", err, new Date().toISOString());
+    logger.error("RentalListPage failed", {
+      fn: "RentalListPage",
+    }, err);
     return (<div>Internal error</div>);
   }
 }
