@@ -1,0 +1,22 @@
+Pre-Alpha test on 5/8/2026
+- [ ] 1. Make the readme.md
+  - [ ] 1. better-sqlite3 will show security warning, need state in readme
+- [ ] 2. Add css style
+- [X] 3. search book by author
+- [X] 4. don't show raw classification in booksearch
+- [X] 5. logout
+- [X] 6. add announcement need a refreash
+- [ ] 7. announcement detail need wrap text
+  - [ ] 1. Set containser size (css todo-2)
+- [X] 8. announcement time show in local timezone
+- [X] 9. announcement detail need back button
+- [X] 10. announcement not full need limit row number
+- [X] 11. rentalList rental status need check overdue (returned or not)
+- [X] 12. rentalList should show more data, admin can see everything
+- [X] 13. book search filter by status
+- [X] 14. rentalRanking set same rentalcount to same ranking
+- [X] 15. return book, for overdue book, show overdue but in fact returned
+- [X] 16. insert book classification give selection
+- [ ] 17. batch import book through xml
+- [X] 18. Give error log in console a Error text with red color
+- [X] 19. complete loggin system
