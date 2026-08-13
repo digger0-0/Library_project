@@ -5,12 +5,15 @@ import { verifySession } from "./auth";
 import { FormSate } from "./auth";
 import { getDb } from "./db";
 import { BookDetails, Rental, User } from "./types";
+import { logger } from "./logger";
+import { getClientIp } from "./request";
 
 export async function insertAnnouncement(formState: FormSate | undefined, formData: FormData): Promise<FormSate>{
   try{
     const sessionData = await verifySession(true);
 
     if(!sessionData || sessionData.role != "admin"){
+      logger.warning("unauthorised access", { fn: "insertAnnouncement", user_id: sessionData?.userId, ip: await getClientIp() });
       return { success: false, message: "Unauthorized" };
     }
 
@@ -18,16 +21,22 @@ export async function insertAnnouncement(formState: FormSate | undefined, formDa
     const content = formData.get("content")?.toString().trim();
 
     if(!title || !content){
+      logger.warning("incomplete input", { fn: "insertAnnouncement", user_id: sessionData.userId });
       return { success: false, message: "Incomplete input" };
     }
 
     const db = getDb();
     db.prepare("INSERT INTO announcements (title, content) VALUES (?, ?)").run(title, content);
     
+    logger.info("New announcement added", {fn: "insertAnnouncement", title, content});
+    revalidatePath("/announcement");
     return { success: true, message: "New announcement added" };
 
   }catch(err){
-    console.log("insertAnnouncement: ", err, new Date().toISOString());
+    logger.error("insertAnnouncement failed", {
+      fn: "insertAnnouncement",
+      title: formData.get("title")?.toString().trim()
+    }, err);
     return { success: false, message: `Announcement insertion failed.\nerr: ${err}` };
   }
 }
@@ -37,6 +46,7 @@ export async function insertBook(formState: FormSate | undefined, formData: Form
     const sessionData = await verifySession(true);
 
     if(!sessionData || sessionData.role != "admin"){
+      logger.warning("unauthorised access", { fn: "insertBook", user_id: sessionData?.userId, ip: await getClientIp() });
       return { success: false, message: "Unauthoried  access" };
     }
 
@@ -47,6 +57,7 @@ export async function insertBook(formState: FormSate | undefined, formData: Form
     const classification = formData.get("classification")?.toString().trim();
 
     if(!isbn || !title || !author || !publisher || !classification){
+      logger.warning("incomplete input", { fn: "insertBook", user_id: sessionData.userId });
       return { success: false, message: "Incomplete input" };
     }
 
@@ -61,10 +72,15 @@ export async function insertBook(formState: FormSate | undefined, formData: Form
       (?, ?, ?, ?, ?, ?)
     `).run(isbn, book_number, title, author, publisher, classification);
 
+    logger.info("New book inserted", {fn: "insertBook", isbn, title});
     return { success: true, message: "New book added" };
 
   }catch(err){
-    console.log("insertBook: ", err, new Date().toISOString());
+    logger.error("insertBook failed", {
+      fn: "insertBook",
+      isbn: formData.get("isbn")?.toString().trim(),
+      title: formData.get("title")?.toString().trim()
+    }, err);
     return { success: false, message: `Book insertion failed.\nerr: ${err}` };
   }
 }
@@ -85,6 +101,7 @@ export async function rentBook(formState: FormSate | undefined, formData: FormDa
     const sessionData = await verifySession(true);
 
     if(!sessionData || sessionData.role != "admin"){
+      logger.warning("unauthorised access", { fn: "rentBook", user_id: sessionData?.userId, ip: await getClientIp() });
       return { success: false, message: "Unauthoried  access" };
     }
 
@@ -96,6 +113,7 @@ export async function rentBook(formState: FormSate | undefined, formData: FormDa
     const due_date = sqliteDueDate(rentalDays);
 
     if(!isbn || !book_number || !user_id){
+      logger.warning("incomplete input", { fn: "rentBook", user_id: sessionData.userId });
       return { success: false, message: "Incomplete input" };
     }
 
@@ -104,14 +122,17 @@ export async function rentBook(formState: FormSate | undefined, formData: FormDa
     const book = db.prepare("SELECT * FROM book_details WHERE isbn = ? AND book_number = ?")
     .get(isbn, book_number) as BookDetails;
     if(book == undefined){
+      logger.warning("invalid ISBN or book_number", { fn: "rentBook", operator_id: sessionData.userId, isbn, book_number });
       return { success: false, message: "Invalid ISBN or Book_number" };
     }else if(book.status != "on shelf"){
+      logger.warning("book already rented", { fn: "rentBook", operator_id: sessionData.userId, isbn, book_number });
       return { success: false, message: "Book is rented" };
     }
     // verify user status
     const user = db.prepare("SELECT * FROM users WHERE user_id = ?")
     .get(user_id) as User;
     if(user == undefined){
+      logger.warning("invalid user_id", { fn: "rentBook", operator_id: sessionData.userId, user_id });
       return { success: false, message: "Invalid user_id" };
     }
     // insert data
@@ -122,9 +143,15 @@ export async function rentBook(formState: FormSate | undefined, formData: FormDa
       (?, ?, ?, ?, ?)
     `).run(isbn, book_number, user_id, rental_date, due_date);
     
+    logger.info("Book rented", {fn: "rentBook", isbn, book_number, user_id});
     return { success: true, message: "Book rented" };
   }catch(err){
-    console.log("rentBook: ", err, new Date().toISOString());
+    logger.error("rentBook failed", {
+      fn: "rentBook",
+      isbn: formData.get("isbn")?.toString().trim(),
+      book_number: formData.get("book_number")?.toString().trim(),
+      user_id: formData.get("user_id")?.toString().trim()
+    }, err);
     return { success: false, message: `Book rental failed.\nerr: ${err}` };
   }
 }
@@ -134,11 +161,13 @@ export async function returnBook(formState: FormSate | undefined, formData: Form
     const sessionData = await verifySession(true);
 
     if(!sessionData || sessionData.role != "admin"){
+      logger.warning("unauthorised access", { fn: "returnBook", user_id: sessionData?.userId, ip: await getClientIp() });
       return { success: false, message: "Unauthoried  access" };
     }
 
     const rental_id = Number(formData.get("rental_id"));
     if(!rental_id){
+      logger.warning("incomplete input", { fn: "returnBook", user_id: sessionData.userId });
       return { success: false, message: "Incomplete input" };
     }
 
@@ -148,8 +177,10 @@ export async function returnBook(formState: FormSate | undefined, formData: Form
     .get(rental_id) as Rental;
 
     if(!rental){
+      logger.warning("invalid rental id", { fn: "returnBook", operator_id: sessionData.userId, rental_id });
       return { success: false, message: "Invalid rental id" };
     }else if(rental.return_date){
+      logger.warning("rental already ended", { fn: "returnBook", operator_id: sessionData.userId, rental_id });
       return { success: false, message: "Rental ends" };
     }
 
@@ -159,12 +190,17 @@ export async function returnBook(formState: FormSate | undefined, formData: Form
 
     // check overdue
     if (rental.due_date < sqliteNow()) {
-      return { success: true, message: "Rental overdue" };
+      logger.info("Book returned, Rental overdue", {fn: "returnBook", rental_id});
+      return { success: true, message: "Book returned, Rental overdue" };
     }
     
+    logger.info("Book returned", {fn: "returnBook", rental_id});
     return { success: true, message: "Book returned" };
   }catch(err){
-    console.log("returnBook: ", err, new Date().toISOString());
+    logger.error("returnBook failed", {
+      fn: "returnBook",
+      rental_id: Number(formData.get("rental_id"))
+    }, err);
     return { success: false, message: `Book return failed.\nerr: ${err}` };
   }
 }
@@ -174,12 +210,14 @@ export async function renewBook(formState: FormSate | undefined, formData: FormD
     const sessionData = await verifySession(true);
 
     if(!sessionData){
+      logger.warning("unauthorised access", { fn: "renewBook", ip: await getClientIp() });
       return { success: false, message: "Unauthoried  access" };
     }
 
     const rental_id = Number(formData.get("rental_id"));
 
     if(!rental_id){
+      logger.warning("incomplete input", { fn: "renewBook", user_id: sessionData.userId });
       return { success: false, message: "Incomplete input" };
     }
 
@@ -189,12 +227,16 @@ export async function renewBook(formState: FormSate | undefined, formData: FormD
     
     // verify rental status
     if(!rental){
+      logger.warning("invalid rental_id", { fn: "renewBook", user_id: sessionData.userId, rental_id });
       return { success: false, message: "Invalid rental_id" };
     }else if(rental.renew >= (Number(process.env.RENEWAL_LIMIT) || 5)){
+      logger.warning("renew limit reached", { fn: "renewBook", user_id: sessionData.userId, rental_id });
       return { success: false, message: "Renew limit reached" };
     }else if(rental.due_date < sqliteNow()){
+      logger.warning("rental overdue", { fn: "renewBook", user_id: sessionData.userId, rental_id });
       return { success: false, message: "Rental overdue" };
     }else if(rental.return_date){
+      logger.warning("rental already ended", { fn: "renewBook", user_id: sessionData.userId, rental_id });
       return { success: false, message: "Rental ended" };
     }
 
@@ -207,10 +249,14 @@ export async function renewBook(formState: FormSate | undefined, formData: FormD
       rental.renew + 1,
       rental_id
     );
+    logger.info("Book renewed", {fn: "renewBook", rental_id, user_id: sessionData.userId});
     revalidatePath("/user/rentalRecords");
     return { success: true, message: "Book renewed" };
   }catch(err){
-    console.log("renewBook: ", err, new Date().toISOString());
+    logger.error("renewBook failed", {
+      fn: "renewBook",
+      rental_id: Number(formData.get("rental_id"))
+    }, err);
     return { success: false, message: `Book renew failed.\nerr: ${err}` };
   }
 }

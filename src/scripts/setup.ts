@@ -36,6 +36,7 @@ async function main() {
 
   // 1. Tables + view
   await initDB();
+  
   console.log("✓ Database tables + book_details view created");
 
   // 2. Seed data (classifications + books)

@@ -5,6 +5,8 @@ import { Roles, type Role, type SessionData, type User } from "./types";
 import { getDb } from "./db";
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { logger } from "./logger";
+import { getClientIp } from "./request";
 
 const SECRET = crypto
   .createHash("sha256")
@@ -29,7 +31,7 @@ export async function signSession(
     const expiresAt = new Date(Date.now() + MAXAGEMS);
     const cookieStore = await cookies();
     // verify uid
-    const user = db.prepare('SELECT 1 FROM users WHERE user_id = ?').get(userId);
+    const user = db.prepare('SELECT username FROM users WHERE user_id = ?').get(userId) as {username: string};
     if(!user) return null;
     // create cipher
     const cipher = crypto.createCipheriv(ALGORITHM, SECRET, iv);
@@ -39,10 +41,6 @@ export async function signSession(
     // write to db
     db.prepare('UPDATE users SET session = ? WHERE user_id = ?').run(session, userId);
     // write to cookie
-    // Only mark the cookie Secure when actually served over HTTPS (e.g. behind
-    // the devtunnel). Over plain http:// (localhost or LAN IP on the test
-    // machine) a Secure cookie is rejected by the browser, so the session is
-    // never stored and the login state is lost.
     const isHttps = (await headers()).get("x-forwarded-proto") === "https";
     cookieStore.set('session', session, {
       httpOnly: true,
@@ -51,10 +49,20 @@ export async function signSession(
       sameSite: "lax",
       path: '/'
     })
+    cookieStore.set('username', user.username, {
+      httpOnly: false,
+      expires: expiresAt,
+      sameSite: "lax",
+      path: '/'
+    });
 
+    logger.info("session signed", {fn: "signSession", userId});
     return session;
   }catch(err){
-    console.log("signSession: ", String(err), new Date().toISOString());
+    logger.error("signSession failed", {
+      fn: "signSession",
+      userId: userId
+    }, err);
     return null;
   }
 }
@@ -65,10 +73,12 @@ export async function verifySession(
   maxAgeMs: number = MAXAGEMS,
 ): Promise<SessionData | null> {
   try {
+    const cookie = await cookies();
     if(!session){
-      const cookie = await cookies();
       session = cookie.get("session")?.value;
-      if(!session) return null;
+      if(!session){
+        return null;
+      }
     }
     const [iv, encryptedData] = session.split('|');
     // extract data
@@ -83,10 +93,15 @@ export async function verifySession(
     const [ userIdStr, timestamp, role] = decrypted.split("|");
     const userId = Number(userIdStr);
     const createdAt = Number(timestamp);
+    const username = cookie.get("username")?.value;
     // expire key
-    if (Date.now() - createdAt > maxAgeMs) return null;
+    if (Date.now() - createdAt > maxAgeMs){
+      return null;
+    }
     // invalid key
-    if (role !== "user" && role !== "admin") return null;
+    if (role !== "user" && role !== "admin"){
+      return null;
+    }
 
     // high level auth
     if(is_high_level){
@@ -94,19 +109,34 @@ export async function verifySession(
       const db = getDb();
       const db_sessionKey = db.prepare('SELECT * FROM users WHERE user_id = ?').get(userId) as User;
 
-      if(db_sessionKey.session != session) return null;
+      if(db_sessionKey.session != session){
+        return null;
+      }
     }
 
-    return { userId, role: role as Role, createdAt };
+    return { userId, role: role as Role, createdAt, username };
   } catch(err){
-    console.log("verifySession: ", String(err), new Date().toISOString());
+    logger.error("verifySession failed", {
+      fn: "verifySession",
+      is_high_level: is_high_level
+    }, err);
     return null;
   }
 }
 
-export async function removeSession(userId: number){
-  const db = getDb();
-  db.prepare('UPDATE users SET session = null WHERE user_id = ?').run(userId);
+export async function removeSession(userId: number): Promise<FormSate>{
+  try{
+    const db = getDb();
+    db.prepare('UPDATE users SET session = null WHERE user_id = ?').run(userId);
+    logger.info("session removed", {fn: "removeSession", userId, ip: await getClientIp()});
+    return { success: true, message: "" }
+  }catch(err){
+    logger.error("removeSession failed", {
+      fn: "removeSession",
+      userId: userId
+    }, err);
+    return { success: false, message: err?.toString() ?? "error" }
+  }
 }
 
 export async function encryptPassword(password: string){
@@ -125,7 +155,10 @@ export async function login(prevState: FormSate | undefined, formData: FormData)
     const password = formData.get('password') as string;
     const db = getDb();
 
-    if(!password || !username) return { success: false, message: "missing info." }
+    if(!password || !username) {
+      logger.warning("missing info. login failed", {fn: "login", username, ip: await getClientIp()});
+      return { success: false, message: "missing info." };
+    }
 
     const cipherPassword = await encryptPassword(password);
     // validate
@@ -134,11 +167,16 @@ export async function login(prevState: FormSate | undefined, formData: FormData)
     // signSession
     if(res){
       await signSession(res.user_id, res.role);
+      logger.info("login success", {fn: "login", user_id: res.user_id, username});
       return { success: true, message: "Login success." };
     }
+    logger.warning("incorrect username / password, login failed", {fn: "login", username, ip: await getClientIp()});
     return { success: false, message: "Incorrect username / password." };
   }catch(err){
-    console.log("login: ", String(err), new Date().toISOString());
+    logger.error("login failed", {
+      fn: "login",
+      username: formData.get("username") as string
+    }, err);
     return { success: false, message: "Internal error." }
   }
 }
@@ -150,19 +188,51 @@ export async function signup(prevState: FormSate| undefined, formData: FormData)
     const rePassword = formData.get('re-password') as string;
     const db = getDb();
     // validate password
-    if(password != rePassword) return { success: false,  message: "Password is inconsistent." };
+    if(password != rePassword){
+      logger.warning("Password inconsistent, signup failed", {fn: "signup", username, ip: await getClientIp()});
+      return { success: false,  message: "Password is inconsistent." };
+    }
     // validate username existancy
     const row = db.prepare("SELECT 1 FROM users WHERE username = ?").get(username);
-    if(row != undefined) return { success: false, message: "Username in use." };
+    if(row != undefined){
+      logger.warning("Username in use, signup failed", {fn: "signup", username, ip: await getClientIp()});
+      return { success: false, message: "Username in use." };
+    }
     // save user data
     const newUser = {username: username, password: await encryptPassword(password)};
     const res = db.prepare("INSERT INTO users (username, password) VALUES (?, ?)")
     .run(newUser.username, newUser.password);
 
+    logger.info("signup success", {fn: "signup", username, ip: await getClientIp()});
     return { success: true, message: "signup success" };
   }catch(err){
-    console.log("signup: ", String(err), new Date().toISOString());
+    logger.error("signup failed", {
+      fn: "signup",
+      username: formData.get('username') as string
+    }, err);
     return { success: false, message: "Internal error." }
+  }
+}
+
+export async function logout(){
+  try{
+    const sessionData = await verifySession();
+    const cookieStore = await cookies();
+    // remove login cookie
+    cookieStore.delete("session");
+    cookieStore.delete("username");
+    // remove db login state
+    if(sessionData?.userId){
+      const res = await removeSession(sessionData.userId);
+      if(!res.success) throw(res.message);
+    }
+    logger.info("logout success", {fn: "logout", userId: sessionData?.userId});
+    return { success: true, message: "Logout"}
+  }catch(err){
+    logger.error("logout failed", {
+      fn: "logout",
+    }, err);
+    return { success: false, message: "Internal error." };
   }
 }
 
@@ -171,10 +241,12 @@ export async function changeRole(userId: number, targetRole: Role): Promise<Form
     const sessionData = await verifySession(true);
 
     if(!sessionData || sessionData.role != "admin"){
+      logger.warning("unauthorised access", {fn: "changeRole", operatorId: sessionData?.userId, ip: await getClientIp()});
       return { success: false, message: "unauthorised access" }
     }
 
     if(!Roles.includes(targetRole)){
+      logger.warning("Invalid role", {fn: "changeRole", operatorId: sessionData?.userId});
       return { success: false, message: "Invalid role" };
     }
 
@@ -182,16 +254,22 @@ export async function changeRole(userId: number, targetRole: Role): Promise<Form
     // validate userId
     const userRow = db.prepare(`SELECT COUNT(*) as count FROM users WHERE user_id = ?`).get(userId) as { count: number };
     if(!userRow.count){
+      logger.warning("Invalid userId", {fn: "changeRole", operatorId: sessionData?.userId, target_user_id: userId});
       return { success: false, message: "Invalid userId"}
     }
 
     // update
     db.prepare(`UPDATE users SET role = ? WHERE user_id = ?`).run(targetRole, userId);
 
+    logger.info("Role change success", {fn: "changeRole", operatorId: sessionData?.userId, target_user_id: userId})
     revalidatePath("/admin/userList");
-    return { success: true, message: `role change on user:${userId} success` }
+    return { success: true, message: `Role change on user:${userId} success` }
   }catch(err){
-    console.log("changeRole: ", String(err), new Date().toISOString());
+    logger.error("changeRole failed", {
+      fn: "changeRole",
+      target_user_id: userId,
+      targetRole: targetRole
+    }, err);
     return { success: false, message: "Internal error." }
   }
 }

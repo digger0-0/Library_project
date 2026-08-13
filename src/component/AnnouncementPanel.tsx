@@ -5,6 +5,7 @@ import { InsertAnnouncementPanel } from "./admin/InsertAnnouncementPanel";
 import { AnnouncementThumbnail } from "./AnnouncementThumbnail";
 import { Suspense } from "react";
 import PageSelector from "./PageSelector";
+import { logger } from "@/lib/logger";
 
 export default async function AnnouncementPanel({
   rowCount = 10,
@@ -44,7 +45,9 @@ export default async function AnnouncementPanel({
       </div>
     );
   }catch(err){
-    console.log("AnnouncementPanel: ", String(err), new Date().toISOString());
+    logger.error("AnnouncementPanel failed", {
+      fn: "AnnouncementPanel",
+    }, err);
     return (
       <div>
         <p>err: {String(err)}</p>

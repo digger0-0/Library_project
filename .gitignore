@@ -18,6 +18,10 @@
 .DS_Store
 *.pem
 
+# logs
+/logs/
+/src/logs/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -39,3 +43,6 @@ next-env.d.ts
 
 # Obsidian workspace config
 Design/.obsidian/
+
+# app log
+/src/logs/*

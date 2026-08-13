@@ -2,6 +2,7 @@ import { UserListClient } from "@/component/admin/UserListClient";
 import PageSelector from "@/component/PageSelector";
 import { verifySession } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
 import { UserRecord } from "@/lib/types";
 import { Suspense } from "react";
 
@@ -60,7 +61,9 @@ export default async function UserListPage({
       </div>
     );
   }catch(err){
-    console.log("UserListPage: ", err, new Date().toISOString());
+    logger.error("UserListPage failed", {
+      fn: "UserListPage",
+    }, err);
     return (<div>Internal error</div>);
   }
 }

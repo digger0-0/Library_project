@@ -2,6 +2,7 @@ import PageSelector from "@/component/PageSelector";
 import { RentalRecordsClient } from "@/component/RentalRecordsClient";
 import { verifySession } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
 import { RentalRecord } from "@/lib/types";
 import { Suspense } from "react";
 
@@ -77,7 +78,9 @@ export default async function rentalRecordsPage({
       </div>
     );
   }catch(err){
-    console.log("rentalRecordsPage: ", err, new Date().toISOString());
+    logger.error("RentalRecordsPage failed", {
+      fn: "RentalRecordsPage",
+    }, err);
     return (<div>Internal error</div>);
   }
 }
