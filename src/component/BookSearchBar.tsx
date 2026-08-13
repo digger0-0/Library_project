@@ -19,7 +19,7 @@ export function BookSearchBar(){
 
   return (
     <form action={handleSubmit}>
-      <input type="text" name="keyword" placeholder="Title/ISBN" defaultValue={keyword}/>
+      <input type="text" name="keyword" placeholder="Title/ISBN/Author" defaultValue={keyword}/>
       <input type="submit"/>
     </form>
   );

@@ -1,7 +1,9 @@
+import { ReturnButton } from "@/component/ReturnButton";
 import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
 import { Announcement } from "@/lib/types";
 
-export default async function Page({
+export default async function AnnouncementDetailPage({
   params,
 }: {
   params: Promise<{ ann_id: string }>;
@@ -16,17 +18,22 @@ export default async function Page({
 
     return (
     <div>
+      <ReturnButton/>
       <h6>{announcement.title}</h6>
       <p className="whitespace-pre-wrap">{announcement.content}</p>
       <p>{announcement.ann_date}</p>
     </div>
     );
   }catch(err){
-    console.log("announcement/[ann_id] (Page): ", String(err), new Date().toISOString());
-    return (<div>
+    logger.error("AnnouncementDetailPage failed", {
+      fn: "AnnouncementDetailPage"
+    }, err);
+    return (
       <div>
-        <p>err: {String(err)}</p>
+        <div>
+          <p>err: {String(err)}</p>
+        </div>
       </div>
-    </div>);
+    );
   }
 }

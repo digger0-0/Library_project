@@ -1,7 +1,8 @@
 "use client"
 
 import { BookSearchDetail, BookSearchDetailFields } from "@/lib/types";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export function BookSearchClient(
   { books }:
@@ -16,6 +17,8 @@ export function BookSearchClient(
       </div>
     );
   }
+
+  useEffect(() => {setDetailId(null)}, [books]);
 
   return (
     <div>
