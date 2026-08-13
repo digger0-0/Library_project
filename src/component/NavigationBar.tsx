@@ -1,24 +1,60 @@
-import { verifySession } from "@/lib/auth";
-import { getDb } from "@/lib/db";
-import { headers } from "next/headers";
-import Link from "next/link";
+'use client'
 
-export async function NavigationBar(){
-  const sessionData = await verifySession();
-  let username = null;
-  if (sessionData) {
-    username = (getDb().prepare("SELECT username FROM users WHERE user_id = ?")
-      .get(sessionData.userId) as { username: string }).username;
-  }
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") ?? "";
+import Link from "next/link";
+import { ReturnButton } from "./ReturnButton";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { SessionData } from "@/lib/types";
+import { logout, verifySession } from "@/lib/auth";
+
+export function NavigationBar(){
+  const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isLogout, setIsLogout] = useState<Boolean>(false);
+  const [message, setMessage] = useState<string>("");
+  const pathname = usePathname();
+
+  const handleLogout = () => {
+    logout().then((res) => {
+      if(res.success){
+        setSessionData(null);
+        setIsLogout(false);
+      }else{
+        setMessage(res.message);
+      }
+    });
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    verifySession().then((res) => {
+      setSessionData(res);
+      setLoading(false);
+    });
+  }, [pathname]);
 
   return (
     <div>
       {
-        /* Login corner */
+        /* Login / logout corner */
         sessionData ? (
-          <div>{username}</div>
+          <div>
+            <div>{sessionData.username}</div>
+            <div>
+              <button
+                onClick={() => {setIsLogout(true)}}
+              >
+                Logout
+              </button>
+              {
+                isLogout && 
+                <div>
+                  <button onClick={handleLogout}>Confirm</button>
+                  <button onClick={() => {setIsLogout(false)}}>Cancel</button>
+                </div>
+              }
+            </div>
+          </div>
         ) : (
           !["/login", "/signup"].includes(pathname) ? (
           <>
@@ -47,6 +83,9 @@ export async function NavigationBar(){
           <Link href={"/admin/rentalList"}>Rental List</Link>
           <Link href={"/admin/userList"}>User List</Link>
         </>
+      }
+      {
+        message.length > 0 && <div>{message}</div>
       }
     </div>
   );
