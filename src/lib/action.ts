@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { verifySession } from "./auth";
 import { FormSate } from "./auth";
 import { getDb } from "./db";
-import { BookDetails, Rental, User } from "./types";
+import { BookDetails, Classifications, Rental, User } from "./types";
 import { logger } from "./logger";
 import { getClientIp } from "./request";
 
@@ -57,8 +57,12 @@ export async function insertBook(formState: FormSate | undefined, formData: Form
     const classification = formData.get("classification")?.toString().trim();
 
     if(!isbn || !title || !author || !publisher || !classification){
-      logger.warning("incomplete input", { fn: "insertBook", user_id: sessionData.userId });
+      logger.warning("Incomplete input", { fn: "insertBook", user_id: sessionData.userId });
       return { success: false, message: "Incomplete input" };
+    }
+    if(!Classifications.includes(classification)){
+      logger.warning(`Invalid classification: ${classification}`, { fn: "insertBook", user_id: sessionData.userId });
+      return { success: false, message: `Invalid classification: ${classification}`};
     }
 
     const db = getDb();

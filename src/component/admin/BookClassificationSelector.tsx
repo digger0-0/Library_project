@@ -23,12 +23,6 @@ export function BookClassificationSelector(
         });
   const rows = Math.min(5, Math.max(1, filteredQueries.length));
 
-  // Close the dropdown when the user clicks outside the combobox.
-  // Using a document "mousedown" listener instead of onBlur: with onBlur, the
-  // blur event fires BEFORE the option's click/change registers, so the
-  // dropdown is hidden before the selection can update the input. With this
-  // listener, clicks on the dropdown (inside the container) are ignored, and
-  // the option's change event runs normally.
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {

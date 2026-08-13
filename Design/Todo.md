@@ -17,6 +17,6 @@ Pre-Alpha test on 5/8/2026
 - [X] 14. rentalRanking set same rentalcount to same ranking
 - [X] 15. return book, for overdue book, show overdue but in fact returned
 - [X] 16. insert book classification give selection
-- [ ] 17. batch import book through xml
+- [X] 17. batch import book through csv
 - [X] 18. Give error log in console a Error text with red color
 - [X] 19. complete loggin system

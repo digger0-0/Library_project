@@ -66,7 +66,7 @@ export interface BookDetails extends Book {
 // insert types
 
 export type NewUser = Omit<User, "session" | "user_id">;
-export type NewBook = Omit<Book, never>;
+export type NewBook = Omit<Book, "book_number">;
 export type NewClassification = Omit<Classification, never>;
 export type NewRental = Omit<Rental, "rental_id" | "return_date" | "renew">;
 export type NewAnnouncement = Omit<Announcement, "ann_id" | "ann_date">;
