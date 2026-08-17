@@ -22,6 +22,9 @@
 /logs/
 /src/logs/
 
+# ebooks (runtime .txt files)
+/assets/ebooks/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

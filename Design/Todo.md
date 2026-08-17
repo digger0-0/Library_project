@@ -20,3 +20,17 @@ Pre-Alpha test on 5/8/2026
 - [X] 17. batch import book through csv
 - [X] 18. Give error log in console a Error text with red color
 - [X] 19. complete loggin system
+- [ ] 20. ebook
+  - [X] 1. create new tables and types for ebook
+  - [ ] 2. handle ebook rental
+    - [X] 1. rent action
+    - [X] 2. return action
+    - [X] 3. renew action
+    - [X] 4. check in rental records
+    - [X] 5. return and renew in rental records
+    - [X] 6. find ebook in book search
+    - [X] 7. rent in book search
+    - [X] 8. ebook insertion
+  - [X] 3. viewing
+- [X] 21. set a universal message display system
+- [X] 22. create a 404 page
