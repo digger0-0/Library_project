@@ -46,6 +46,28 @@ export interface Announcement {
   content: string;
 }
 
+export interface Ebook {
+  ebook_id: number;
+  isbn: string | null;
+  title: string;
+  author: string;
+  publisher: string;
+  classification: string;
+  copies: number;      // total number of identical digital copies
+  filename: string;    // .txt file name in the ebooks/ folder
+}
+export const EbookFields: (keyof Ebook)[] = ["ebook_id", "isbn", "title", "author", "publisher", "classification", "copies", "filename"];
+
+export interface EbookRental {
+  ebook_rental_id: number;
+  ebook_id: number;
+  user_id: number;
+  rental_date: string;
+  due_date: string;
+  return_date: string | null;
+  renew: number;
+}
+
 // view
 
 export interface BookDetails extends Book {
@@ -63,10 +85,28 @@ export interface BookDetails extends Book {
   renew: number | null;
 }
 
+export interface EbookDetails extends Omit<Ebook, "filename"> {
+  full_classification: string | null;
+  class_icon: string | null;
+  available: number;   // available copies (copies - active loans)
+  // Current loan status (null = not loaned)
+  ebook_rental_id: number | null;
+  user_id: number | null;
+  username: string | null;
+  rental_date: string | null;
+  due_date: string | null;
+  return_date: string | null;
+  status: "on shelf" | "rent" | "overdue";
+  days_overdue: number | null;
+  renew: number | null;
+}
+
 // insert types
 
 export type NewUser = Omit<User, "session" | "user_id">;
 export type NewBook = Omit<Book, "book_number">;
+export type NewEbook = Omit<Ebook, "ebook_id">;
+export const NewEbookFields: (keyof NewEbook)[] = ["isbn", "title", "author", "publisher", "classification", "copies", "filename"];
 export type NewClassification = Omit<Classification, never>;
 export type NewRental = Omit<Rental, "rental_id" | "return_date" | "renew">;
 export type NewAnnouncement = Omit<Announcement, "ann_id" | "ann_date">;
@@ -84,9 +124,20 @@ export interface SessionData {
 
 export type RentalRecord = BookDetails;
 export const rentalRecordFields: (keyof RentalRecord)[] = ["isbn", "book_number", "title", "author", "publisher", "classification", "full_classification", "class_icon", "user_id", "username", "rental_id", "rental_date", "due_date", "return_date", "status", "days_overdue", "renew"];
+export interface RentalRecordUser extends Omit<BookDetails, "isbn" | "book_number" | "author" | "publisher" | "classification" | "full_classification" | "class_icon" | "user_id" | "username" | "status"> {
+  status: "returned" | "rent" | "overdue";
+}
+export const RentalRecordUserFields: (keyof RentalRecordUser)[] = ["rental_id", "title", "status", "rental_date", "due_date", "return_date", "days_overdue", "renew"];
 
-export type BookSearchDetail = Omit<RentalRecord, "rental_id" | "rental_date" | "return_date" | "renew" | "days_overdue">;
-export const BookSearchDetailFields: (keyof BookSearchDetail)[] = ["isbn", "book_number", "title", "author", "publisher", "full_classification", "class_icon", "due_date", "status"];
+export type EbookRentalRecords = EbookDetails;
+export const EbookRentalRecordFields: (keyof EbookRentalRecords)[] = ["ebook_id", "isbn", "title", "publisher", "classification", "full_classification", "class_icon", "user_id", "username", "ebook_rental_id", "rental_date", "due_date","return_date", "status", "days_overdue", "renew"];
+export interface EbookRentalRecordsUser extends Omit<EbookRentalRecords, "ebook_id" | "isbn" | "author" | "publisher" | "copies" | "available" | "classification" | "full_classification" | "class_icon" | "user_id" | "username" | "status"> {
+  status: "returned" | "rent" | "overdue";
+}
+export const EbookRentalRecordUserFields: (keyof EbookRentalRecordsUser)[] = ["ebook_rental_id", "title", "status", "rental_date", "due_date", "return_date", "days_overdue", "renew"];
+
+export type BookSearchDetail = Omit<RentalRecord, "rental_id" | "rental_date" | "return_date" | "renew" | "days_overdue" | "classification" | "user_id" | "username"> & {bookType: "Book" | "Ebook", ebook_id: number, rented: boolean};
+export const BookSearchDetailFields: (keyof BookSearchDetail)[] = ["isbn", "book_number", "title", "author", "publisher", "full_classification", "class_icon", "due_date", "status", "bookType", "ebook_id", "rented"];
 
 export interface UserRecord extends User {
   overdue_count: number;
@@ -326,3 +377,10 @@ export interface Log {
   meta?: unknown;
   err?: unknown
 }
+
+export interface EbookViewerInfo extends Omit<Ebook, "copies" | "filename"> {
+  rental_date: string;
+  due_date: string;
+  status: "returned" | "overdue" | "rent";
+}
+export const EbookViewerInfoFields: (keyof EbookViewerInfo)[] = ["ebook_id","isbn", "title", "author", "classification", "publisher", "status", "rental_date", "due_date"];

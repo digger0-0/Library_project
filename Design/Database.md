@@ -1,11 +1,11 @@
 ## Tables
-- Users
+- users
 	- user_id char(10) primary key
 	- username varchar(10) not null
 	- password varchar(8) not null
 	- session_key char(30)
 		- user_id + session_start -> encrypt
-- Books
+- books
 	- ISBN char(17)
 	- book_number char(2)
 	- title varchar(30)
@@ -13,14 +13,14 @@
 	- publisher varchar(20)
 	- classification char(10)
 	- primary key(ISBN, book_number)
-- Classifications
+- classifications
 	- classification char(10) primary key
 	- description varchar(15) not null
 	- class_icon varchar(10) -> emoji
 - ISBNPrefix
 	- code char(9) primary key
 	- country varchar(20)
-- Rentals
+- rentals
 	- rental_id integer primary key AUTOINCREMENT,
 	- ISBN char(17),
 	- book_number char(2),
@@ -29,13 +29,32 @@
 	- due_date datetime,
 	- return_date datetime,
 	- renew integer
-- Announcements
+- announcements
 	- ann_id ingeter primary key AUTOINCREMENT
 	- ann_date datetime
 	- title varchar(10)
 	- content varchar(10)
+- ebooks
+	- ebook_id integer primary key AUTOINCREMENT
+	- isbn char(17) unique (optional)
+	- title varchar(30) not null
+	- author varchar(20) not null
+	- publisher varchar(20) not null
+	- classification char(10) not null
+	- available integer not null default 1 -> number of identical digital copies
+	- filename varchar(255) not null -> .txt file in the ebooks/ folder
+	- FK classification -> classifications
+- ebook_rentals
+	- ebook_rental_id integer primary key AUTOINCREMENT
+	- ebook_id integer not null
+	- user_id integer not null
+	- rental_date datetime not null
+	- due_date datetime not null
+	- return_date datetime
+	- renew integer default 0
+	- FK ebook_id -> ebooks, user_id -> users
 ##  View
-- Book_details
+- book_details
 	- ISBN
 	- book_number
 	- title
@@ -48,6 +67,27 @@
 	- user_id
 	- username
 	- rent_date
+	- due_date
+	- return_date
+	- status
+		- 'on shelf', 'rent', 'overdue'
+	- days_overdue
+	- renew
+- ebook_details (view)
+	- ebook_id
+	- isbn
+	- title
+	- author
+	- publisher
+	- classification
+	- available -> number of identical digital copies
+	- full_classification
+		- classification + description
+	- class_icon
+	- ebook_rental_id
+	- user_id
+	- username
+	- rental_date
 	- due_date
 	- return_date
 	- status

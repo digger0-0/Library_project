@@ -68,6 +68,34 @@ export async function initDB() {
     );
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ebooks (
+      ebook_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+      isbn            CHAR(17) UNIQUE,           -- optional (NULL if no ISBN)
+      title           VARCHAR(30) NOT NULL,
+      author          VARCHAR(20) NOT NULL,
+      publisher       VARCHAR(20) NOT NULL,
+      classification  CHAR(10) NOT NULL,
+      copies       INTEGER NOT NULL DEFAULT 1, -- number of identical digital copies
+      filename        VARCHAR(255) NOT NULL,      -- .txt file name in the ebooks/ folder
+      FOREIGN KEY (classification) REFERENCES classifications(classification)
+    );
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ebook_rentals (
+      ebook_rental_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ebook_id        INTEGER NOT NULL,
+      user_id         INTEGER NOT NULL,
+      rental_date     DATETIME NOT NULL,
+      due_date        DATETIME NOT NULL,
+      return_date     DATETIME,
+      renew           INTEGER DEFAULT 0,
+      FOREIGN KEY (ebook_id) REFERENCES ebooks(ebook_id),
+      FOREIGN KEY (user_id)  REFERENCES users(user_id)
+    );
+  `);
+
   db.exec(`DROP VIEW IF EXISTS book_details;`);
 
   db.exec(`
@@ -115,6 +143,64 @@ export async function initDB() {
         AND r2.return_date IS NULL
       ORDER BY r2.rental_id DESC
       LIMIT 1
+    )
+    LEFT JOIN users u ON r.user_id = u.user_id;
+  `);
+
+  db.exec(`DROP VIEW IF EXISTS ebook_details;`);
+
+  db.exec(`
+    CREATE VIEW ebook_details AS
+    SELECT
+      e.ebook_id,
+      e.isbn,
+      e.title,
+      e.author,
+      e.publisher,
+      e.classification,
+      e.copies,
+      e.classification || ' - ' || c.description AS full_classification,
+      c.class_icon,
+
+      r.ebook_rental_id,
+      r.user_id,
+      u.username,
+      r.rental_date,
+      r.due_date,
+      r.return_date,
+
+      CASE
+        WHEN r.ebook_rental_id IS NULL  THEN 'on shelf'
+        WHEN r.return_date IS NOT NULL  THEN 'on shelf'
+        WHEN r.due_date < datetime('now') THEN 'overdue'
+        ELSE 'rent'
+      END AS status,
+
+      (e.copies - (SELECT COUNT(*) FROM ebook_rentals r1
+        WHERE r1.ebook_id = e.ebook_id AND r1.return_date IS NULL
+      )) AS available,
+
+      CASE
+        WHEN r.return_date IS NOT NULL THEN NULL
+        WHEN r.due_date < datetime('now')
+          THEN CAST(julianday('now') - julianday(r.due_date) AS INTEGER)
+        ELSE NULL
+      END AS days_overdue,
+
+      r.renew
+    FROM ebooks e
+    LEFT JOIN classifications c ON e.classification = c.classification
+    -- join the latest rental (so every ebook has at least one row) plus all
+    -- active (unreturned) loans, so multi-copy loans each produce a row
+    LEFT JOIN ebook_rentals r ON r.ebook_rental_id IN (
+      SELECT ebook_rental_id FROM ebook_rentals
+      WHERE ebook_id = e.ebook_id
+        AND (return_date IS NULL OR ebook_rental_id = (
+          -- the latest rental, so every ebook still shows at least one row
+          SELECT ebook_rental_id FROM ebook_rentals
+          WHERE ebook_id = e.ebook_id
+          ORDER BY ebook_rental_id DESC LIMIT 1
+        ))
     )
     LEFT JOIN users u ON r.user_id = u.user_id;
   `);
