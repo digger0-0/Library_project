@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ReturnButton } from "./ReturnButton";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { SessionData } from "@/lib/types";
 import { logout, verifySession } from "@/lib/auth";
@@ -12,6 +12,7 @@ export function NavigationBar(){
   const [loading, setLoading] = useState<boolean>(false);
   const [isLogout, setIsLogout] = useState<Boolean>(false);
   const [message, setMessage] = useState<string>("");
+  const [ scrollY, setScrollY ] = useState<number>(0);
   const pathname = usePathname();
 
   const handleLogout = () => {
@@ -31,14 +32,24 @@ export function NavigationBar(){
       setSessionData(res);
       setLoading(false);
     });
+
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    }
   }, [pathname]);
 
   return (
-    <div>
-      {
-        /* Login / logout corner */
-        sessionData ? (
-          <div>
+    <div className="sticky top-0 z-50 bg-white">
+      {/* Login / logout corner */}
+      <div className="right-0">
+        { sessionData ? (
+          <>
             <div>{sessionData.username}</div>
             <div>
               <button
@@ -54,7 +65,7 @@ export function NavigationBar(){
                 </div>
               }
             </div>
-          </div>
+          </>
         ) : (
           !["/login", "/signup"].includes(pathname) ? (
           <>
@@ -64,29 +75,42 @@ export function NavigationBar(){
           ) : (
             null
           )
-        )
-      }
-      {/* Public Pages */}
-      <Link href={"/"}>Home</Link>
-      <Link href={"/announcement"}>Announcement</Link>
-      <Link href={"/bookSearch"}>Book Search</Link>
-      <Link href={"/rentalRanking"}>Leaderboard</Link>
-      {
-        /* logged in */
-        sessionData && 
-        <Link href={"/user/rentalRecords"}>Rental Records</Link>
-      }
-      {
-        /* Admin */
-        sessionData?.role == "admin" && <>
-          <Link href={"/admin/booksManagement"}>Book Management</Link>
-          <Link href={"/admin/rentalList"}>Rental List</Link>
-          <Link href={"/admin/userList"}>User List</Link>
-        </>
-      }
-      {
-        message.length > 0 && <div>{message}</div>
-      }
+        )}
+      </div>
+      <div>
+        {/* Public Pages */}
+        <Link href={"/"}>Home</Link>
+        <Link href={"/announcement"}>Announcement</Link>
+        <Link href={"/bookSearch"}>Book Search</Link>
+        <Link href={"/rentalRanking"}>Leaderboard</Link>
+        {
+          /* logged in */
+          sessionData && <>
+            <Link href={"/user/rentalRecords"}>Rental Records</Link>
+            <Link href={"/user/ebook"}>Ebook</Link>
+          </>
+        }
+        {
+          /* Admin */
+          sessionData?.role == "admin" && <>
+            <Link href={"/admin/booksManagement"}>Book Management</Link>
+            <Link href={"/admin/rentalList"}>Rental List</Link>
+            <Link href={"/admin/userList"}>User List</Link>
+          </>
+        }
+        {
+          message.length > 0 && <div>{message}</div>
+        }
+      </div>
+      <div>
+        { scrollY > 200 && (
+          <button
+            onClick={() => {window.scrollTo(0, 0)}}
+          >
+            Top
+          </button>
+        )}
+      </div>
     </div>
   );
 }
