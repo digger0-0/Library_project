@@ -20,9 +20,9 @@ Pre-Alpha test on 5/8/2026
 - [X] 17. batch import book through csv
 - [X] 18. Give error log in console a Error text with red color
 - [X] 19. complete loggin system
-- [ ] 20. ebook
+- [X] 20. ebook
   - [X] 1. create new tables and types for ebook
-  - [ ] 2. handle ebook rental
+  - [X] 2. handle ebook rental
     - [X] 1. rent action
     - [X] 2. return action
     - [X] 3. renew action
@@ -33,4 +33,15 @@ Pre-Alpha test on 5/8/2026
     - [X] 8. ebook insertion
   - [X] 3. viewing
 - [X] 21. set a universal message display system
-- [X] 22. create a 404 page
+- [X] 22. sticky navbar and back-to-top button
+- [X] 23. fix Tailwind v4 setup (missing theme tokens: top-0/bg-* etc.)
+- [X] 24. security audit fixes
+  - [X] 1. require SESSION_SECRET (no hardcoded fallback)
+  - [X] 2. renewEbook ownership check (IDOR)
+  - [X] 3. clamp pagination (rowCount/page) and copies
+  - [X] 4. fix CSV import row-clear regression
+  - [X] 5. ebook filename sanitization (path traversal)
+  - [X] 6. remove server-only import from client PageSelector
+- [X] 25. ebook viewer reading progress (save on client-side nav + debounced scroll save)
+- [X] 26. clean portable release (strip dev logs + junk ebook assets)
+- [X] 27. release v1.0.0 (portable zip, tagged)

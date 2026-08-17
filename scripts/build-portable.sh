@@ -107,6 +107,14 @@ cp dist/setup.cjs "$DIST/app/setup.js"
 # first launch, so the shipped build is always "initial state".
 rm -f "$DIST/app/library.db" "$DIST/app/library.db-shm" "$DIST/app/library.db-wal"
 
+# Ship a clean release: strip dev logs and any non-demo ebook files.
+# setup.js recreates the demo ebooks (incl. the long progress-demo book) on
+# the target machine's first launch, so nothing valuable is lost.
+rm -rf "$DIST/app/logs"
+if [ -d "$DIST/app/assets/ebooks" ]; then
+  find "$DIST/app/assets/ebooks" -type f ! -name 'demo-*.txt' -delete
+fi
+
 # --- 6. start script ----------------------------------------------------------
 info "Creating start.sh"
 cat > "$DIST/start.sh" <<'EOF'
