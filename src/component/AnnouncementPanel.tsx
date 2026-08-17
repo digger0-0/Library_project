@@ -6,6 +6,7 @@ import { AnnouncementThumbnail } from "./AnnouncementThumbnail";
 import { Suspense } from "react";
 import PageSelector from "./PageSelector";
 import { logger } from "@/lib/logger";
+import { clamp } from "@/lib/utility";
 
 export default async function AnnouncementPanel({
   rowCount = 10,
@@ -17,6 +18,9 @@ export default async function AnnouncementPanel({
   full: boolean,
 }){
   try{
+    // clamp props
+    rowCount = clamp(rowCount, 1, 100, 10);
+    page = clamp(page, 1, Infinity);
     // fetch the announcements
     const db = getDb();
     let rows: Announcement[];
@@ -50,7 +54,7 @@ export default async function AnnouncementPanel({
     }, err);
     return (
       <div>
-        <p>err: {String(err)}</p>
+        <p>Internal error</p>
       </div>
     );
   }

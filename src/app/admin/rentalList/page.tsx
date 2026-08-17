@@ -4,6 +4,7 @@ import { verifySession } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { RentalRecord } from "@/lib/types";
+import { clamp } from "@/lib/utility";
 import { Suspense } from "react";
 
 export default async function RentalListPage({
@@ -13,8 +14,8 @@ export default async function RentalListPage({
 }) {
   try{
     const sp = await searchParams;
-    const rowCount = Number(sp.rowCount) || 10;
-    const page = Number(sp.page) || 1;
+    const rowCount = clamp(Number(sp.rowCount), 1, 100, 10);
+    const page = clamp(Number(sp.page), 1, Infinity, 1);
     const overdue = sp.overdue === "true";
 
     const sessionData = await verifySession();

@@ -31,7 +31,7 @@ export default async function AnnouncementDetailPage({
     return (
       <div>
         <div>
-          <p>err: {String(err)}</p>
+          <p>Internal error</p>
         </div>
       </div>
     );

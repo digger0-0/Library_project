@@ -8,9 +8,13 @@ import { revalidatePath } from "next/cache";
 import { logger } from "./logger";
 import { getClientIp } from "./request";
 
+if(!process.env.SESSION_SECRET){
+  logger.fatal("missing session secret", {fn: "auth.ts"});
+}
+
 const SECRET = crypto
   .createHash("sha256")
-  .update(process.env.SESSION_SECRET || "default-dev-secret")
+  .update(process.env.SESSION_SECRET as string)
   .digest();
 
 const ALGORITHM = "aes-256-cbc";

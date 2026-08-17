@@ -4,6 +4,7 @@ import { verifySession } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { UserRecord } from "@/lib/types";
+import { clamp } from "@/lib/utility";
 import { Suspense } from "react";
 
 export default async function UserListPage({
@@ -13,8 +14,8 @@ export default async function UserListPage({
 }) {
   try{
     const sp = await searchParams;
-    const rowCount = Number(sp.rowCount) || 10;
-    const page = Number(sp.page) || 1;
+    const rowCount = clamp(Number(sp.rowCount), 1, 100, 10);
+    const page = clamp(Number(sp.page), 1, Infinity, 1);
     const rankOverdue = sp.rankOverdue == "true";
 
     const sessionData = await verifySession();
@@ -36,6 +37,7 @@ export default async function UserListPage({
           WHERE
             r.user_id = u.user_id
             AND r.due_date < datetime('now')
+            AND r.return_date IS NULL
         ) AS overdue_count
       FROM users u
       ORDER BY` + (

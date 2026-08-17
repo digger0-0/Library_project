@@ -14,8 +14,6 @@ export function InsertBooksPanel(){
   const [ formKey, setFormKey ] = useState<number>(0);
   const [ importMode, setImportMode ] = useState<"manuel" | "csvText" | "csvFile">("manuel");
 
-  // After a successful manual insert, clear the classification selection and
-  // remount the selector (its query is internal state, so a key change resets it)
   useEffect(() => {
     if(state?.success){
       setSelectedClassification("");
@@ -41,7 +39,6 @@ export function InsertBooksPanel(){
       setError(String(err));
     }finally{
       setLoading(false);
-      setRows([]);
     }
   }
   async function handleCSVFile(formData: FormData){
@@ -57,7 +54,6 @@ export function InsertBooksPanel(){
       setError(String(err));
     }finally{
       setLoading(false);
-      setRows([]);
     }
   }
   async function importConfirm(){
