@@ -6,8 +6,8 @@ Pre-Alpha test on 5/8/2026
 - [X] 4. don't show raw classification in booksearch
 - [X] 5. logout
 - [X] 6. add announcement need a refreash
-- [ ] 7. announcement detail need wrap text
-  - [ ] 1. Set containser size (css todo-2)
+- [X] 7. announcement detail need wrap text
+  - [X] 1. Set containser size (css todo-2)
 - [X] 8. announcement time show in local timezone
 - [X] 9. announcement detail need back button
 - [X] 10. announcement not full need limit row number
@@ -45,3 +45,23 @@ Pre-Alpha test on 5/8/2026
 - [X] 25. ebook viewer reading progress (save on client-side nav + debounced scroll save)
 - [X] 26. clean portable release (strip dev logs + junk ebook assets)
 - [X] 27. release v1.0.0 (portable zip, tagged)
+alpha test 21/8
+- [X] 1. rental ranking thumbnail detail not consistent
+- [ ] 2. all display date should conver to local time zone   <!-- deferred: handle later -->
+- [X] 3. frontend all notification to toast
+- [X] 4. block spam at frontend
+
+alpha test 4/9 - layout & UI pass
+- [X] 1. sticky navbar stays pinned on long pages (body no longer capped at 100vh; min-height:100vh)
+- [X] 2. page content fills / centres in the area below the navbar (layout flex:1 wrapper)
+- [X] 3. login & signup pages centred
+- [X] 4. rentalRanking full page centred below navbar (was hidden under sticky navbar) + monthly/yearly side by side
+- [X] 5. rental ranking always live data (added noStore -> no stale static prerender)
+- [X] 6. announcement detail: very long titles with no spaces now wrap (overflow-wrap: anywhere)
+- [X] 7. announcement thumbnail: cap title display at 30 chars
+- [X] 8. book search: filter by classification (safe SQL builder)
+- [X] 9. rental records page: books & ebooks shown side by side, each scrolls in its own box
+- [X] 10. shared empty/error page (BigWordPage) across lists/panels
+- [X] 11. global CSS design system (buttons, inputs, tables, headings)
+- [X] 12. frontend notifications routed to toast (logout / login / signup / insert / rent / return / renew / csv)
+- [X] 13. frontend spam block: required fields on forms
