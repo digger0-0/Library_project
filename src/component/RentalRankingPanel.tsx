@@ -34,7 +34,7 @@ export function RentalRankingPanel({
   
   if(full){
     return (
-      <div>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 24, alignItems: "flex-start" }}>
         { RentalRankingFields.map((f, i) => (
           <table key={i}>
             <tbody>
@@ -67,12 +67,14 @@ export function RentalRankingPanel({
   }
 
   return (
-    <div> 
-      <div>
+    <div className="enclose"> 
+      <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
         {RentalRankingFields.map((t, i) => (
           <button
+            className="btn"
             key={i}
             onClick={() => {setType(t)}}
+            style={{backgroundColor: (type == t? "lightgray": "white")}}
           >
             {t.toString()}
           </button>
