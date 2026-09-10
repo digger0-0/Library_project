@@ -17,3 +17,84 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* buttons */
+.btn {
+  display: inline-block;
+  padding: 1px 6px;
+  margin: 2px 2px;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+.btn:hover { background: #f3f4f6; }
+.btn:disabled { background: #c4c4c4;}
+
+.enclose {
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 8px 8px;
+  margin: 8px 4px;
+  overflow-x: auto;   /* keep the border intact — scroll wide content (e.g. tables) */
+}
+
+input[type="submit"], input[type="file"] {
+  display: inline-block;
+  padding: 1px 6px;
+  margin: 2px 2px;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+input[type="submit"]:hover { background: #f3f4f6; }
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="email"],
+input[type="search"],
+textarea,
+select {
+  border: 1.5px solid #d1d5db;
+  border-radius: 2px;
+  padding: 2px 4px;
+  font: inherit;
+  background: #fff;
+  color: var(--foreground);
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #545454;
+  border-color: #545454;
+}
+select:disabled {
+  background: #cecece;
+}
+
+table {
+  border-collapse: collapse;   /* cells share lines instead of boxing each one */
+}
+th, td {
+  border: 1px solid #d1d5db;   /* thin lines between rows and columns */
+  padding: 1px 4px;
+  text-align: center;          /* center cell content */
+}
+th { background: #f3f4f6; font-weight: 600; }
+
+h1 {
+  font-size: 250%;
+  font-weight: bold;
+  text-align: center;
+  margin: 2% 5% 1% 5%;
+}
+
+h3 {
+  font-size: 120%;
+  font-weight: bold;
+  margin: 2% 2%;
+}
