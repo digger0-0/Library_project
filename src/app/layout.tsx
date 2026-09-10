@@ -28,10 +28,13 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{display: "flex", flexDirection: 'column', minHeight: "100vh"}}
       >
         <ToastProvider>
           <NavigationBar/>
-          {children}
+          <div style={{flex: 1, display: "flex", flexDirection: "column", width: "100%"}}>
+            {children}
+          </div>
         </ToastProvider>
       </body>
     </html>

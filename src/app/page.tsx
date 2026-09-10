@@ -5,18 +5,16 @@ import { Suspense } from "react";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <h1 className="text-4xl font-bold">Library Project</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400">
-          Welcome to the library management app.
-        </p>
-        <Suspense fallback={<div>Loading</div>}>
-          <BookSearchBar/>
-          <AnnouncementPanel rowCount={5} page={1} full={false}/>
-          <RentalRankingContainer/>
-        </Suspense>
-      </main>
-    </div>
+    <main style={{flex: 1, width: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center"}}>
+      <h1>Library Project</h1>
+      <p style={{margin: "2%"}}>
+        Welcome to the library management app.
+      </p>
+      <Suspense fallback={<div>Loading</div>}>
+        <BookSearchBar/>
+        <AnnouncementPanel rowCount={5} page={1} full={false}/>
+        <RentalRankingContainer/>
+      </Suspense>
+    </main>
   );
 }
