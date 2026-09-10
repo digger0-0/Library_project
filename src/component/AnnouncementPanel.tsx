@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import PageSelector from "./PageSelector";
 import { logger } from "@/lib/logger";
 import { clamp } from "@/lib/utility";
+import { BigWordPage } from "./bigWordPage";
 
 export default async function AnnouncementPanel({
   rowCount = 10,
@@ -30,19 +31,21 @@ export default async function AnnouncementPanel({
     const sessionData = await verifySession();
 
     return(
-      <div>
-        { full && (
-          <Suspense fallback={<div>Loading announcements...</div>}>
-            <PageSelector initialRowCount={rowCount} initialPage={page} recordCount={recordCount} />
-          </Suspense>
-        )}
-        {rows.length? rows.map((announcement) => {
-          return (
-            <AnnouncementThumbnail key={announcement.ann_id} announcement={announcement} full={full}/>
-          );
-        }):
-          <p>no announcement</p>
-        }
+      <div className={(full? "": "enclose")} style={{display: "flex"}}>
+        <div style={(sessionData?.role == "admin" && full)? {width: "70%"}: {width: "100%"}}>
+          { full && (
+            <Suspense fallback={<div>Loading announcements...</div>}>
+              <PageSelector initialRowCount={rowCount} initialPage={page} recordCount={recordCount} />
+            </Suspense>
+          )}
+          {rows.length? rows.map((announcement) => {
+            return (
+              <AnnouncementThumbnail key={announcement.ann_id} announcement={announcement} full={full}/>
+            );
+          }):
+            <BigWordPage text="No announcement"/>
+          }
+        </div>
         { sessionData?.role == "admin" && full && (
           <InsertAnnouncementPanel/>
         )}
@@ -53,9 +56,7 @@ export default async function AnnouncementPanel({
       fn: "AnnouncementPanel",
     }, err);
     return (
-      <div>
-        <p>Internal error</p>
-      </div>
+      <BigWordPage text="Internal error"/>
     );
   }
 }

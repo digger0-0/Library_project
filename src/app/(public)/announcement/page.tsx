@@ -10,8 +10,6 @@ export default async function AnnouncementPage({
   const page = Number(sp.page) || 1;
 
   return (
-    <div>
-      <AnnouncementPanel rowCount={rowCount} page={page} full={true} />
-    </div>
+    <AnnouncementPanel rowCount={rowCount} page={page} full={true} />
   );
 }

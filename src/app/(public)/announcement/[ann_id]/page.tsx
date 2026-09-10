@@ -1,3 +1,4 @@
+import { BigWordPage } from "@/component/bigWordPage";
 import { ReturnButton } from "@/component/ReturnButton";
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
@@ -17,11 +18,13 @@ export default async function AnnouncementDetailPage({
     .get(ann_id) as Announcement;
 
     return (
-    <div>
+    <div className="enclose" style={{height: "100%"}}>
       <ReturnButton/>
-      <h6>{announcement.title}</h6>
-      <p className="whitespace-pre-wrap">{announcement.content}</p>
-      <p>{announcement.ann_date}</p>
+      <div>
+        <p>{announcement.ann_date}</p>
+        <h3 style={{overflowWrap: "anywhere"}}>{announcement.title}</h3>
+        <p className="whitespace-pre-wrap enclose" style={{overflowWrap: "anywhere"}}>{announcement.content}</p>
+      </div>
     </div>
     );
   }catch(err){
@@ -29,11 +32,7 @@ export default async function AnnouncementDetailPage({
       fn: "AnnouncementDetailPage"
     }, err);
     return (
-      <div>
-        <div>
-          <p>Internal error</p>
-        </div>
-      </div>
+      <BigWordPage text="Internal error"/>
     );
   }
 }
