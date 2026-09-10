@@ -1,6 +1,7 @@
 "use client"
 
 import { RentalRecord, rentalRecordFields } from "@/lib/types";
+import { BigWordPage } from "../bigWordPage";
 
 export function RentalListClient(
   { rentalRecords }:
@@ -8,14 +9,12 @@ export function RentalListClient(
 ){
   if(rentalRecords.length == 0){
     return (
-      <div>
-        <p>No rental records</p>
-      </div>
+      <BigWordPage text="No rental records"/>
     );
   }
 
   return (
-      <div>
+      <div className="enclose">
         <table>
           <tbody>
             <tr>

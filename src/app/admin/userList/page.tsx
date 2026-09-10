@@ -1,4 +1,5 @@
 import { UserListClient } from "@/component/admin/UserListClient";
+import { BigWordPage } from "@/component/bigWordPage";
 import PageSelector from "@/component/PageSelector";
 import { verifySession } from "@/lib/auth";
 import { getDb } from "@/lib/db";
@@ -21,7 +22,7 @@ export default async function UserListPage({
     const sessionData = await verifySession();
     
     if(!sessionData || sessionData.role != "admin"){
-      return ( <div>Unauthorised access</div> );
+      return ( <BigWordPage text="Unauthorised access"/> );
     }
     
     const db = getDb();
@@ -66,6 +67,6 @@ export default async function UserListPage({
     logger.error("UserListPage failed", {
       fn: "UserListPage",
     }, err);
-    return (<div>Internal error</div>);
+    return (<BigWordPage text="Internal error"/>);
   }
 }

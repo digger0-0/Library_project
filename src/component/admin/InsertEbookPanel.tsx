@@ -59,10 +59,10 @@ export function InsertEbookPanel(){
   };
 
   return (
-    <div>
+    <div className="enclose">
       <p>Insert Ebook</p>
-      <button onClick={() => {setInsertType("Text")}}>Text</button>
-      <button onClick={() => {setInsertType("File")}}>File</button>
+      <button style={{backgroundColor: (insertType == "Text"? "lightgray": "white")}} className="btn" onClick={() => {setInsertType("Text")}}>Text</button>
+      <button style={{backgroundColor: (insertType == "File"? "lightgray": "white")}} className="btn" onClick={() => {setInsertType("File")}}>File</button>
         {(() => {
           switch (insertType){
             case "Text":
@@ -79,6 +79,7 @@ export function InsertEbookPanel(){
                           name="classification"
                           value={selectedClassification}
                           readOnly
+                          required
                           className="hidden"
                         />
                       </td>
@@ -96,7 +97,7 @@ export function InsertEbookPanel(){
                     <td><textarea name="content" required/></td>
                   </tr>
                   </tbody></table>
-                  <button type="submit">Upload</button>
+                  <input type="submit" value={"Upload"}/>
                 </form>
               );
             case "File":
@@ -130,7 +131,7 @@ export function InsertEbookPanel(){
                       <td><input type="file" name="content" required/></td>
                     </tr>
                   </tbody></table>
-                  <button type="submit">Upload</button>
+                  <input type="submit" value={"Upload"}/>
                 </form>
               );
           }

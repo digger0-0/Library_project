@@ -2,6 +2,7 @@
 
 import { Ebook, EbookFields } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
+import { ReturnButton } from "./ReturnButton";
 
 export function EbookViewer(
   { ebook, content }:
@@ -53,8 +54,11 @@ export function EbookViewer(
   }, [ebook.ebook_id]);
 
   return (
-    <div>
-      <table onClick={() => {setIsCollasped(prev => !prev)}}>
+    <div style={{padding: "8px"}}>
+      <table
+        onClick={() => {setIsCollasped(prev => !prev)}}
+        style={{backgroundColor: "white", margin: "8px"}}
+      >
         <tbody>
         { isCollasped? (
           <tr>
@@ -73,7 +77,7 @@ export function EbookViewer(
         </tbody>
         <tfoot><tr><td>{isCollasped? "v": "^"}</td></tr></tfoot>
       </table>
-      <div>
+      <div style={{margin: "10px"}}>
         {sections.map((section, i) => (
           <div
             key={i}

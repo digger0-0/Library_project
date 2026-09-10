@@ -1,15 +1,21 @@
 "use client"
 
 import { rentBook } from "@/lib/action";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useToast } from "../Toast";
 
 export function RentBookPanel(){
   const fields = ["isbn", "book_number", "user_id"];
 
   const [ state, formAction, isPending ] = useActionState(rentBook, undefined);
+  const toast = useToast();
+
+  useEffect(() => {
+    if (state) toast(state.message, !state.success);
+  }, [state]);
 
   return(
-    <div>
+    <div className="enclose">
       Rent book
       <form action={formAction}>
         <table>
@@ -17,18 +23,13 @@ export function RentBookPanel(){
           {fields.map((f, i) => (
             <tr key={i}>
               <td><label>{f}</label></td>
-              <td><input type="text" name={f}/></td>
+              <td><input type="text" name={f} required/></td>
             </tr>
           ))}
           </tbody>
         </table>
-        <input type="submit"/>
+        <input type="submit" value={"Rent"}/>
       </form>
-      { state && (
-        <div>
-          <p>{ state.message }</p>  
-        </div>
-      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { clamp } from "@/lib/utility";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
@@ -26,11 +27,11 @@ export default function PageSelector({
   checkBox.forEach((s) => {
     checkBoxes.set(s, searchParams.get(s)?.toString());
   });
-  const selections: Map<string, string> = new Map<string, string>();
+  const selections: Map<string, unknown> = new Map<string, unknown>();
   selection.forEach((s) => {
-    checkBoxes.set(s[0], searchParams.get(s[0])?.toString());
+    selections.set(s[0], searchParams.get(s[0])?.toString());
   });
-  const pageRange = [1, Math.max(1, Math.ceil(recordCount/rowCount))]
+  const pageRange = [1, clamp(Math.ceil(recordCount/rowCount), 1, Infinity)];
 
   useEffect(() => {
     if(pageRange[1] < page){
@@ -81,7 +82,9 @@ export default function PageSelector({
   }
 
   return (
-    <div>
+    <div
+      style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px", margin: "4px 8px" }}
+    >
       <label>
         Num. of Data:
         <select name="rowCount" value={rowCount} onChange={handleRowCountChange}>
@@ -92,9 +95,9 @@ export default function PageSelector({
       </label>
       <label>
         Page:
-        <button onClick={() => {changePage(-1)}} disabled={page<=1}>{"<<"}</button>
+        <button className="btn" onClick={() => {changePage(-1)}} disabled={page<=1}>{"<<"}</button>
         <input type="number" name="pageNumber" value={page} onChange={handlePageChange} min={1} />
-        <button onClick={() => {changePage(1)}} disabled={page>=pageRange[1]}>{">>"}</button>
+        <button className="btn" onClick={() => {changePage(1)}} disabled={page>=pageRange[1]}>{">>"}</button>
       </label>
       {Array.from(checkBoxes.entries()).map((val, i) => (
         <label key={i}>
@@ -113,7 +116,7 @@ export default function PageSelector({
           <select
             name={val[0]}
             // default is first element
-            defaultValue={selections.get(val[0]) || val[1][0]}
+            defaultValue={(selections.get(val[0]) || val[1][0]) as string}
             onChange={handleSelectionChange}
           >
             {val[1].map((tag, j) => (

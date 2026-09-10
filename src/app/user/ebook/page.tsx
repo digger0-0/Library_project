@@ -32,23 +32,34 @@ export default async function EbookPage(){
       userId
     ) as EbookViewerInfo[];
 
+    if(ebooks.length == 0){
+      return (
+        <div>No ebooks rented</div>
+      );
+    }
+
     return (
-      <div>
+      <div className="enclose">
         <table><tbody>
           <tr>
             {EbookViewerInfoFields.map((f, j) => (
               <td key={j}>{f}</td>
             ))}
-            <td>-</td>
           </tr>
           {ebooks.map((ebook, i) => (
             <tr key={i}>
               {EbookViewerInfoFields.map((f, j) => (
                 <td key={j}>{ebook[f]}</td>
               ))}
-              <td><Link href={`/user/ebook/viewer/${ebook.ebook_id}`} aria-disabled={ebook.status == "overdue"}>
-                View
-              </Link></td>
+              <td>
+                <Link
+                  className="btn"
+                  href={`/user/ebook/viewer/${ebook.ebook_id}`}
+                  aria-disabled={ebook.status == "overdue"}
+                >
+                  View
+                </Link>
+              </td>
             </tr>
           ))}
         </tbody></table>

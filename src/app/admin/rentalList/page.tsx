@@ -1,4 +1,5 @@
 import { RentalListClient } from "@/component/admin/RentalListClient";
+import { BigWordPage } from "@/component/bigWordPage";
 import PageSelector from "@/component/PageSelector";
 import { verifySession } from "@/lib/auth";
 import { getDb } from "@/lib/db";
@@ -21,7 +22,7 @@ export default async function RentalListPage({
     const sessionData = await verifySession();
     
     if(!sessionData || sessionData.role != "admin"){
-      return ( <div>Unauthorised access</div> );
+      return ( <BigWordPage text="Unauthorised access"/> );
     }
     
     const db = getDb();
@@ -79,7 +80,6 @@ export default async function RentalListPage({
       rowCount,
       (page - 1) * rowCount
     ) as RentalRecord[];
-    logger.debug("rental records fetched", { fn: "RentalListPage", count: rentalRecords.length });
 
     const recordCount = (
       db.prepare(`
@@ -108,6 +108,6 @@ export default async function RentalListPage({
     logger.error("RentalListPage failed", {
       fn: "RentalListPage",
     }, err);
-    return (<div>Internal error</div>);
+    return (<BigWordPage text="Internal error"/>);
   }
 }

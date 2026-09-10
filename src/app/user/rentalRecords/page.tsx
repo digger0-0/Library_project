@@ -1,3 +1,4 @@
+import { BigWordPage } from "@/component/bigWordPage";
 import PageSelector from "@/component/PageSelector";
 import { RentalRecordsClient } from "@/component/RentalRecordsClient";
 import { verifySession } from "@/lib/auth";
@@ -19,7 +20,7 @@ export default async function rentalRecordsPage({
   const sessionData = await verifySession();
 
   if(!sessionData){
-    return ( <div>Unauthorised access</div> );
+    return ( <BigWordPage text="Unauthorised access"/> );
   }
   
   const db = getDb();
@@ -111,6 +112,6 @@ export default async function rentalRecordsPage({
     logger.error("RentalRecordsPage failed", {
       fn: "RentalRecordsPage",
     }, err);
-    return (<div>Internal error</div>);
+    return (<BigWordPage text="Internal error"/>);
   }
 }

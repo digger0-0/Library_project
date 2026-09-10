@@ -2,6 +2,7 @@
 
 import { insertBook } from "@/lib/action";
 import { useActionState, useEffect, useState } from "react";
+import { useToast } from "../Toast";
 import { BookClassificationSelector } from "./BookClassificationSelector";
 import { Classifications, NewBook } from "@/lib/types";
 import { csv } from "csvtojson";
@@ -10,18 +11,20 @@ export function InsertBooksPanel(){
   const fields: (keyof NewBook)[] = ["isbn", "title", "author", "publisher", "classification"];
 
   const [ state, formAction, isPending ] = useActionState(insertBook, undefined);
+  const toast = useToast();
   const [ selectedClassification, setSelectedClassification] = useState<(typeof Classifications)[number]>("");
   const [ formKey, setFormKey ] = useState<number>(0);
   const [ importMode, setImportMode ] = useState<"manuel" | "csvText" | "csvFile">("manuel");
 
   useEffect(() => {
-    if(state?.success){
-      setSelectedClassification("");
-      setFormKey(k => k + 1);
+    if(state){
+      toast(state.message, !state.success);
+      if(state.success){
+        setSelectedClassification("");
+        setFormKey(k => k + 1);
+      }
     }
   }, [state]);
-  const [ error, setError ] = useState<string>("");
-  const [ message, setMessage ] = useState<string>("");
   const [ loading, setLoading] = useState<Boolean>(false);
   const [ rows, setRows ] = useState<NewBook[]>([]);
 
@@ -36,7 +39,7 @@ export function InsertBooksPanel(){
       const jsonArray = await csv().fromString(csvText) as NewBook[];
       setRows(jsonArray);
     }catch(err){
-      setError(String(err));
+      toast(String(err), true);
     }finally{
       setLoading(false);
     }
@@ -45,20 +48,18 @@ export function InsertBooksPanel(){
     const file = formData.get("csvFile") as File | null;
     if(!file) return;
     setLoading(true);
-    setError("");
     try{
       const text = await file.text();
       const jsonArray = await csv().fromString(text);
       setRows(jsonArray);
     }catch(err){
-      setError(String(err));
+      toast(String(err), true);
     }finally{
       setLoading(false);
     }
   }
   async function importConfirm(){
     setLoading(true);
-    setError("");
     let successCount = 0;
     const failed: NewBook[] = [];
     let report = "";
@@ -84,9 +85,9 @@ export function InsertBooksPanel(){
         }
       }
       report += `\n${successCount} books inserted\n${failed.length} books failed`;
-      setMessage(report);
+      toast(report, failed.length > 0);
     }catch(err){
-      setError(String(err));
+      toast(String(err), true);
     }finally{
       setLoading(false);
       setRows([]);
@@ -94,12 +95,12 @@ export function InsertBooksPanel(){
   }
 
   return(
-    <div>
+    <div className="enclose">
       Insert new book
       <div>
-        <button disabled={loading === true} onClick={() => setImportMode("manuel")}>Manuel import</button>
-        <button disabled={loading === true} onClick={() => setImportMode("csvText")}>CSV Text import</button>
-        <button disabled={loading === true} onClick={() => setImportMode("csvFile")}>CSV File import</button>
+        <button style={{backgroundColor: (importMode == "manuel"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => setImportMode("manuel")}>Manuel import</button>
+        <button style={{backgroundColor: (importMode == "csvText"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => setImportMode("csvText")}>CSV Text import</button>
+        <button style={{backgroundColor: (importMode == "csvFile"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => setImportMode("csvFile")}>CSV File import</button>
       </div>
       {importMode == "manuel" ? (
         <form action={formAction}>
@@ -108,7 +109,7 @@ export function InsertBooksPanel(){
             {fields.slice(0, -1).map((f, i) => (
               <tr key={i}>
                 <td><label>{f}</label></td>
-                <td><input type="text" name={f}/></td>
+                <td><input type="text" name={f} required/></td>
               </tr>
             ))}
             {/* classification */}
@@ -120,6 +121,7 @@ export function InsertBooksPanel(){
                   type="text" 
                   name="classification"
                   value={selectedClassification}
+                  required
                   readOnly
                   className="hidden"
                 />
@@ -127,7 +129,7 @@ export function InsertBooksPanel(){
             </tr>
             </tbody>
           </table>
-          <input type="submit"/>
+          <input type="submit" value={"Insert"}/>
         </form>
       ): (
         <div>
@@ -135,13 +137,13 @@ export function InsertBooksPanel(){
             <form action={handleCSVText}>
               <label>CSV</label><br/>
               <textarea name="csvText" required/><br/>
-              <button type="submit">Upload</button>
+              <input type="submit" value={"Upload"}/>
             </form>
           ): (
             <form action={handleCSVFile}>
               <label>CSV</label><br/>
               <input type="file" accept=".csv" name="csvFile" required/>
-              <button type="submit">Upload</button>
+              <input type="submit" value={"Upload"}/>
             </form>
           )
           }
@@ -163,25 +165,13 @@ export function InsertBooksPanel(){
                   )}
                 </tbody>
               </table>
-              <button type="button" onClick={importConfirm} disabled={loading === true}>
+              <button className="btn" type="button" onClick={importConfirm} disabled={loading === true}>
                 {loading ? "Importing..." : "Confirm"}
               </button>
             </form>
           }
         </div>
-      )}
-      
-      { state && (
-        <div>
-          <p>{ state.message }</p>
-        </div>
-      )}
-      { error && (
-        <div><p className="whitespace-pre-wrap">{String(error)}</p></div>
-      )}
-      { message && (
-        <div><p className="whitespace-pre-wrap">{message}</p></div>
-      )}
+      )}      
     </div>
   );
 }

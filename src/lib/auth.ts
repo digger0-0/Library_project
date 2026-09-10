@@ -267,7 +267,7 @@ export async function changeRole(userId: number, targetRole: Role): Promise<Form
 
     logger.info("Role change success", {fn: "changeRole", operatorId: sessionData?.userId, target_user_id: userId})
     revalidatePath("/admin/userList");
-    return { success: true, message: `Role change on user:${userId} success` }
+    return { success: true, message: `Role change on user: ${userId} success` }
   }catch(err){
     logger.error("changeRole failed", {
       fn: "changeRole",

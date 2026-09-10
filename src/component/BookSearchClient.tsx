@@ -4,6 +4,7 @@ import { rentEbook } from "@/lib/action";
 import { BookSearchDetail, BookSearchDetailFields } from "@/lib/types";
 import { useEffect, useState, useTransition } from "react";
 import { useToast } from "./Toast";
+import { BigWordPage } from "./bigWordPage";
 
 export function BookSearchClient(
   { books, checkRented }:
@@ -19,19 +20,17 @@ export function BookSearchClient(
 
   if(books.length == 0){
     return (
-      <div>
-        <p>No match search</p>
-      </div>
+      <BigWordPage text="No match search"/>
     );
   }
 
   return (
-    <div>
-      <table>
+    <div style={{display: "flex"}}>
+      <table style={{margin: "8px"}}>
         <tbody>
           <tr>
             { bookSearchDetailFields.map((f, i) => (
-              <td key={i}>{f.toString()}</td>
+              <th key={i}>{f.toString()}</th>
             ))}
           </tr>
           { books.map((book, i) => (
@@ -44,8 +43,8 @@ export function BookSearchClient(
         </tbody>
       </table>
       {detailId != null && (
-        <div>
-          <button onClick={() => {setDetailId(null)}}>X</button>
+        <div className="enclose">
+          <button className="btn" onClick={() => {setDetailId(null)}}>X</button>
           { bookSearchDetailFields.map((f, i) => (
             <div key={i}>
               <label>{f.toString() + ": "}</label>

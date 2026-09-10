@@ -3,6 +3,8 @@
 import { changeRole, verifySession } from "@/lib/auth";
 import { Role, Roles, SessionData, UserRecord, userRecordFields } from "@/lib/types";
 import { ChangeEvent, useEffect, useState } from "react";
+import { useToast } from "../Toast";
+import { BigWordPage } from "../bigWordPage";
 
 export function UserListClient(
   { userRecords }:
@@ -19,8 +21,8 @@ export function UserListClient(
   }, []);
 
   //@ userId, targetRole
+  const toast = useToast();
   const [roleChanges, setRoleChanges] = useState<Map<number, Role>>(new Map());
-  const [message, setMessage] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<Map<number, Role>>(new Map());
   useEffect(() => {
     setSelectedRole(new Map(userRecords.map(u => [u.user_id, u.role])));
@@ -30,7 +32,7 @@ export function UserListClient(
     setLoading(true);
     const task = Array.from(roleChanges.entries()).map(([userId, targetRole]) =>
       changeRole(userId, targetRole).then((res) => {
-        setMessage(prev => (prev? prev + "\n": "") + res.message);
+        toast(res.message, !res.success);
       })
     );
     Promise.all(task).finally(() => {
@@ -55,9 +57,7 @@ export function UserListClient(
 
   if(userRecords.length == 0){
     return (
-      <div>
-        <p>No user records</p>
-      </div>
+      <BigWordPage text="No user records"/>
     );
   }
 
@@ -66,28 +66,29 @@ export function UserListClient(
   }
 
   return (
-      <div>
+      <div className="enclose">
         {roleChanges.size > 0 &&
           <div>
             <button
+              className="btn"
               onClick={handleChangeRole}
             >
               Confirm {roleChanges.size} role{roleChanges.size > 1 && "s"} change
             </button>
             <button
+              className="btn"
               onClick={handleChangeRoleCancel}
             >
               Cancel
             </button>
           </div>
         }
-        {message && <div>{message}</div>}
         <table>
           <tbody>
             <tr>
               {userRecordFields.map((f, j) => (
                 <td key={j}>
-                  <label>{f.toString()}{": "}</label>
+                  <label>{f.toString()}</label>
                 </td>
               ))}
             </tr>
