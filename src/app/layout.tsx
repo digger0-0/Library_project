@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NavigationBar } from "@/component/NavigationBar";
 import { ToastProvider } from "@/component/Toast";
+import { AuthProvider } from "@/component/Auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,10 +32,12 @@ export default function RootLayout({
         style={{display: "flex", flexDirection: 'column', minHeight: "100vh"}}
       >
         <ToastProvider>
-          <NavigationBar/>
-          <div style={{flex: 1, display: "flex", flexDirection: "column", width: "100%"}}>
-            {children}
-          </div>
+          <AuthProvider>
+            <NavigationBar/>
+            <div style={{flex: 1, display: "flex", flexDirection: "column", width: "100%"}}>
+              {children}
+            </div>
+          </AuthProvider>
         </ToastProvider>
       </body>
     </html>

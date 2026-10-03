@@ -154,6 +154,14 @@ export interface RentalRankings {
 };
 export const RentalRankingFields: (keyof RentalRankings)[] = ["monthly", "yearly"];
 
+export type BookRankingInfo = { title: string; author: string; count: number };
+export interface BookRankings {
+  history: BookRankingInfo[];
+  yearly: BookRankingInfo[];
+  monthly: BookRankingInfo[];
+};
+export const BookRankingsInfoFields: (keyof BookRankingInfo)[] = ["title", "author", "count"];export const BookRankingTypes: (keyof BookRankings)[] = ["history", "monthly", "yearly"];
+
 export const Classifications: string[] = [
   // English (Dewey Decimal)
   "eng-F",

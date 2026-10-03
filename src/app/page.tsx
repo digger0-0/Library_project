@@ -1,4 +1,6 @@
 import AnnouncementPanel from "@/component/AnnouncementPanel";
+import { BookRankingContainer } from "@/component/BookRankingContainer";
+import { BookRecommendationPanel } from "@/component/BookRecommendationPanel";
 import { BookSearchBar } from "@/component/BookSearchBar";
 import { RentalRankingContainer } from "@/component/RentalRankingContainer";
 import { Suspense } from "react";
@@ -14,6 +16,8 @@ export default function Home() {
         <BookSearchBar/>
         <AnnouncementPanel rowCount={5} page={1} full={false}/>
         <RentalRankingContainer/>
+        <BookRecommendationPanel/>
+        <BookRankingContainer full={false}/>
       </Suspense>
     </main>
   );

@@ -277,3 +277,90 @@ export async function changeRole(userId: number, targetRole: Role): Promise<Form
     return { success: false, message: "Internal error." }
   }
 }
+
+export async function changeUsername(newUsername: string): Promise<FormSate>{
+  try{
+    const sessionData = await verifySession(true);
+    const userId = sessionData?.userId;
+    const role = sessionData?.role as Role;
+    const checkUsername = newUsername.trim();
+
+    if(!sessionData || !userId){
+      logger.warning("unauthorized access", {fn: "changeUsername", ip: await getClientIp()});
+      return { success: false, message: "unauthorised access" };
+    }
+
+    if(checkUsername != newUsername){
+      logger.warning("Invalid input", {fn: "changeUsername", userId});
+      return { success: false, message: "No starting or trailing space" };
+    }
+
+    const db = getDb();
+    // check if username collide
+    const res = db.prepare(`
+      SELECT 1 FROM users WHERE username = ?  
+    `).get(newUsername);
+    if(res){
+      logger.warning("New username inuse", {fn: "changeUsername", userId, newUsername});
+      return { success: false, message: "Username inuse" };
+    }
+
+    // operate
+    db.prepare(`
+      UPDATE users SET username = ? WHERE user_id = ?
+    `).run(newUsername, userId);
+
+    await signSession(userId, role);
+
+    logger.info("Username changed", {fn: "changeUsername", userId, newUsername});
+    revalidatePath("/user/info/");
+    return { success: true, message: "Username changed" }
+  }catch(err){
+    logger.error("changeUsername failed", {
+      fn: "changeUsername",
+      userId: (await verifySession())?.userId,
+      newUsername: newUsername
+    }, err);
+    return { success: false, message: "Internal error." }
+  }
+}
+
+export async function changePassword(password: string, newPassword: string): Promise<FormSate>{
+  try{
+    const sessionData = await verifySession(true);
+    const user_id = sessionData?.userId;
+
+    if(!sessionData || !user_id){
+      logger.warning("unauthorized access", {fn: "changePassword", ip: await getClientIp()});
+      return { success: false, message: "unauthorized" };
+    }
+
+    // check if current password valid
+    const cipherPassword = await encryptPassword(password);
+    const cipherNewPassword = await encryptPassword(newPassword);
+    const db = getDb();
+    const res = db.prepare(`
+      SELECT 1 FROM users WHERE (user_id = ? AND password = ?)
+    `).get(user_id, cipherPassword);
+    if(!res){
+      logger.warning("Invalid password", {fn: "changePassword", user_id, password});
+      return { success: false, message: "Invalid password" };
+    }
+
+    // operate
+    db.prepare(`
+      UPDATE users SET password = ? WHERE user_id = ?  
+    `).run(cipherNewPassword, user_id);
+    
+    logger.info("Password changed", {fn: "changePassword", user_id, newPassword});
+    revalidatePath("/user/info");
+    return { success: true, message: "Password changed" };
+  }catch(err){
+    logger.error("changePassword failed", {
+      fn: "changePassword",
+      userId: (await verifySession())?.userId,
+      newPassword: newPassword
+    }, err);
+    return { success: false, message: "Internal error"}
+  }
+}

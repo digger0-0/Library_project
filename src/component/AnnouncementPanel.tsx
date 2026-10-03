@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import PageSelector from "./PageSelector";
 import { logger } from "@/lib/logger";
 import { clamp } from "@/lib/utility";
-import { BigWordPage } from "./bigWordPage";
+import { BigWordPage } from "./bigWordPage"
 
 export default async function AnnouncementPanel({
   rowCount = 10,

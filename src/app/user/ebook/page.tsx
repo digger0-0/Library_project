@@ -1,3 +1,4 @@
+import { BigWordPage } from "@/component/bigWordPage";
 import { verifySession } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { EbookViewerInfo, EbookViewerInfoFields } from "@/lib/types";
@@ -34,7 +35,7 @@ export default async function EbookPage(){
 
     if(ebooks.length == 0){
       return (
-        <div>No ebooks rented</div>
+        <BigWordPage text="No ebook rented"/>
       );
     }
 
@@ -52,13 +53,16 @@ export default async function EbookPage(){
                 <td key={j}>{ebook[f]}</td>
               ))}
               <td>
-                <Link
-                  className="btn"
-                  href={`/user/ebook/viewer/${ebook.ebook_id}`}
-                  aria-disabled={ebook.status == "overdue"}
-                >
-                  View
-                </Link>
+                {ebook.status == "overdue" ? (
+                  <button className="btn" disabled>View</button>
+                ):(
+                  <Link
+                    className="btn"
+                    href={`/user/ebook/viewer/${ebook.ebook_id}`}
+                  >
+                    View
+                  </Link>
+                )}
               </td>
             </tr>
           ))}

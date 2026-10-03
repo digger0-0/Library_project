@@ -9,6 +9,7 @@ import { logger } from "./logger";
 import { getClientIp } from "./request";
 import path from "node:path";
 import { writeFile } from "node:fs/promises";
+import { existsSync, unlinkSync } from "node:fs";
 
 export async function insertAnnouncement(formState: FormSate | undefined, formData: FormData): Promise<FormSate>{
   try{
@@ -266,6 +267,64 @@ export async function renewBook(rental_id: number): Promise<FormSate>{
   }
 }
 
+export async function deleteBook(formState: FormSate | undefined, formData: FormData): Promise<FormSate>{
+  try{
+    const sessionData = await verifySession(true);
+
+    // verify operator identity
+    if(!sessionData || sessionData.role != "admin"){
+      logger.warning("unauthorised access", { fn: "deleteBook", ip: await getClientIp() });
+      return { success: false, message: `Unauthorized access` };
+    }
+
+    const isbn = formData.get("isbn")?.toString().trim();
+    const book_number = formData.get("book_number")?.toString().trim();
+
+    if(!isbn || !book_number){
+      logger.warning("incomplete input", { fn: "deleteBook", user_id: sessionData.userId});
+      return { success: false, message: `Incomplete input` };
+    }
+    
+    // verify valid input
+    const db = getDb();
+    const res = db.prepare(`
+      SELECT 1 FROM books WHERE isbn = ? AND book_number = ?
+    `).get(isbn, book_number);
+
+    if(!res){
+      logger.warning("invalid input", {fn: "deleteBook", user_id: sessionData.userId});
+      return { success: false, message: `Invalid input` };
+    }
+
+    // block delete when the book has rental history (the FK would reject it anyway)
+    const rented = db.prepare(`
+      SELECT 1 FROM rentals WHERE isbn = ? AND book_number = ? LIMIT 1
+    `).get(isbn, book_number);
+    if(rented){
+      logger.warning("book has rental history", {fn: "deleteBook", user_id: sessionData.userId, isbn, book_number});
+      return { success: false, message: `Cannot delete: book has rental history` };
+    }
+
+    // Operate
+    db.prepare(`
+      DELETE FROM books WHERE isbn = ? AND book_number = ?  
+    `).run(isbn, book_number);
+    logger.info("Book deleted", {fn: "deleteBook", isbn, book_number, user_id: sessionData.userId});
+
+    revalidatePath("/admin/booksManagement");
+    revalidatePath("/bookSearch");
+    revalidatePath("/admin/rentalList");
+    return { success: true, message: `Book:(${isbn}|${book_number}) deleted.` };
+  }catch(err){
+    logger.error("deleteBook failed", {
+      fn: "deleteBook",
+      isbn: (formData.get("isbn")),
+      book_number: (formData.get("book_number"))
+    }, err);
+    return { success: false, message: `Book delete failed.` };
+  }
+}
+
 export async function insertEbook(ebook: NewEbook, content: string): Promise<FormSate>{
   try{
     const sessionData = await verifySession(true);
@@ -390,6 +449,7 @@ export async function returnEbook(ebook_rental_id: number){
     // handle overdue (will return automatically if done)
     if(rental.due_date < sqliteNow()){
       logger.info("Ebook returned, overdue", {fn: "returnEbook", ebook_rental_id, due_date: rental.due_date});
+      revalidatePath("/user/rentalRecords");
       return { success: true, message: "Ebook returned, rental overdue"}
     }
 
@@ -454,5 +514,79 @@ export async function renewEbook(ebook_rental_id: number): Promise<FormSate>{
       ebook_rental_id
     }, err);
     return { success: false, message: `Ebook renew failed.` };
+  }
+}
+
+export async function deleteEbook(formState: FormSate | undefined, formData: FormData): Promise<FormSate>{
+  try{
+    const sessionData = await verifySession(true);
+
+    // verify operator identity
+    if(!sessionData || sessionData.role != "admin"){
+      logger.warning("unauthorised access", { fn: "deleteEbook", ip: await getClientIp() });
+      return { success: false, message: `Unauthorized access` };
+    }
+
+    const ebook_id = formData.get("ebook_id")?.toString().trim();
+    const doRemoveFile = formData.get("doRemoveFile") === "true";
+
+    if(!ebook_id){
+      logger.warning("incomplete input", { fn: "deleteEbook", user_id: sessionData.userId});
+      return { success: false, message: `Incomplete input` };
+    }
+    
+    // verify valid input
+    const db = getDb();
+    const res = db.prepare(`
+      SELECT filename FROM ebooks WHERE ebook_id = ?
+    `).get(ebook_id) as { filename: string } | undefined;
+
+    if(!res){
+      logger.warning("invalid input", {fn: "deleteEbook", user_id: sessionData.userId});
+      return { success: false, message: `Invalid input` };
+    }
+
+    // block delete when the ebook has rental history (the FK would reject it anyway)
+    const rented = db.prepare(`
+      SELECT 1 FROM ebook_rentals WHERE ebook_id = ? LIMIT 1
+    `).get(ebook_id);
+    if(rented){
+      logger.warning("ebook has rental history", {fn: "deleteEbook", user_id: sessionData.userId, ebook_id});
+      return { success: false, message: `Cannot delete: ebook has rental history` };
+    }
+
+    // Operate
+    db.prepare(`
+      DELETE FROM ebooks WHERE ebook_id = ?
+    `).run(ebook_id);
+    logger.info("Ebook deleted", {fn: "deleteEbook", ebook_id, user_id: sessionData.userId});
+
+    // remove file (best-effort: a missing file must not make the delete look failed)
+    if(doRemoveFile && res.filename){
+      const filename = res.filename;
+      const ebookDir = path.join(process.cwd(), "assets", "ebooks");
+      const filePath = path.join(ebookDir, filename);
+      // defence in depth: never escape the ebooks directory
+      if(path.dirname(filePath) !== ebookDir){
+        logger.warning("refused unsafe filename", {fn: "deleteEbook", ebook_id, filename});
+      }else if(existsSync(filePath)){
+        unlinkSync(filePath);
+        logger.info("Ebook file removed", {fn: "deleteEbook", ebook_id, filename});
+      }else{
+        logger.warning("Ebook file not found", {fn: "deleteEbook", ebook_id, filename});
+      }
+    }
+
+    logger.info("Ebook deleted", {fn: "deleteEbook", ebook_id, doRemoveFile});
+    revalidatePath("/admin/booksManagement");
+    revalidatePath("/bookSearch");
+    revalidatePath("/user/rentalRecords");
+    return { success: true, message: `Ebook:(${ebook_id}) deleted. doRemoveFile: ${doRemoveFile}` };
+  }catch(err){
+    logger.error("deleteEbook failed", {
+      fn: "deleteEbook",
+      ebook_id: (formData.get("ebook_id")),
+    }, err);
+    return { success: false, message: `Ebook delete failed.` };
   }
 }

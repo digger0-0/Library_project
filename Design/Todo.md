@@ -65,3 +65,16 @@ alpha test 4/9 - layout & UI pass
 - [X] 11. global CSS design system (buttons, inputs, tables, headings)
 - [X] 12. frontend notifications routed to toast (logout / login / signup / insert / rent / return / renew / csv)
 - [X] 13. frontend spam block: required fields on forms
+
+Hard review 10/9
+- [X] 1. edit user info
+- [X] 2. delete book
+- [X] 3. delete ebook
+- [X] 4. add daily book recommendation
+- [X] 5. add popular book ranking
+- [ ] 6. batch setup user account
+- [ ] 7. ensure naming consistency in aciton.ts
+- [ ] 8. fix input confirm button remains after form submit
+- [ ] 9. make book delete add tag (will not lose records)
+- [X] 10. feature: view full toast
+- [ ] 11. make a recapcha

@@ -5,20 +5,14 @@ import { Role, Roles, SessionData, UserRecord, userRecordFields } from "@/lib/ty
 import { ChangeEvent, useEffect, useState } from "react";
 import { useToast } from "../Toast";
 import { BigWordPage } from "../bigWordPage";
+import { useAuth } from "../Auth";
 
 export function UserListClient(
   { userRecords }:
   { userRecords: UserRecord[]}
 ){
-  const [sessionData, setSessionData] = useState<SessionData | null>();
+  const { sessionData } = useAuth();
   const [loading, setLoading] = useState<boolean>(false);
-  useEffect(() => {
-    setLoading(true);
-    verifySession().then((res) => {
-      setSessionData(res);
-      setLoading(false);
-    });
-  }, []);
 
   //@ userId, targetRole
   const toast = useToast();

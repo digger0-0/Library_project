@@ -75,7 +75,7 @@ export function RentalRecordsClient(
                         <td key={j}>{r[f]}</td>
                       ))}
                       <td>
-                        {( (r.renew || 0) < 5  && r.status != "returned") && (
+                        {( (r.renew || 0) < 5  && r.status == "rent") && (
                           <button
                             className="btn"
                             disabled={isPending}

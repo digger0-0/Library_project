@@ -4,6 +4,10 @@ import { createContext, useContext, useRef, useState } from "react";
 
 const ToastContext = createContext<((message: string, error?: boolean) => number) | null>(null);
 
+const MAXROWS = 3;
+const CONTENTLENGTH = 50;
+
+
 export function ToastProvider({
   children,
 }: Readonly<{
@@ -11,6 +15,7 @@ export function ToastProvider({
 }>) {
   let msgId = useRef(0);
   const [ Toasts, setToasts ] = useState<[number, string, boolean][]>([]);
+  const [ toastDetail, setToastDetail ] = useState<[number, string, boolean] | null>(null);
   const push = (message: string, error?: boolean): number => {
     msgId.current += 1;
     const id = msgId.current;
@@ -23,6 +28,31 @@ export function ToastProvider({
 
   return(
     <ToastContext.Provider value={push}>
+      <div
+        hidden={toastDetail == null}
+        style={{
+          position: "fixed",
+          top: "20%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 10000,
+          width: "50%",
+          height: "70%",
+          background: toastDetail?.[2] ? "#fee2e2" : "#ffffff",
+          border: toastDetail?.[2] ? "1px solid #dc2626" : "1px solid #d1d5db",
+          borderRadius: "2px",
+          padding: "4px 8px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          alignItems: "center",
+          gap: "8px",
+          overflowY: "auto"
+        }}
+      >
+        <button className="btn" onClick={(e) => {setToastDetail(null)}}>X</button>
+        <div style={{ whiteSpace: "pre-wrap"}}>
+          {toastDetail?.[1]}
+        </div>
+      </div>
       {/* fixed overlay at the top-center of the viewport — stays on screen
           while the page scrolls, above everything (zIndex) */}
       <div style={{
@@ -50,11 +80,19 @@ export function ToastProvider({
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              justifyContent: "space-between",   // label left, X pushed to far right
+              justifyContent: "space-between",
             }}
+            onClick={() => {setToastDetail([ind, msg, error])}}
           >
-            <label style={{ whiteSpace: "pre-wrap", color: error ? "#991b1b" : "#0f172a" }}>{msg}</label>
-            <button className="btn" onClick={() => dismiss(ind)}>X</button>
+            <label style={{ whiteSpace: "pre-wrap", color: error ? "#991b1b" : "#0f172a" }}>
+              {
+                msg.split('\n')
+                .slice(0, MAXROWS)
+                .map((line) => line.length > CONTENTLENGTH ? line.slice(0, CONTENTLENGTH).concat('...') : line)
+                .join('\n')
+              }
+            </label>
+            <button className="btn" onClick={(e) => {e.stopPropagation(); dismiss(ind);}}>X</button>
           </div>
         ))}
       </div>

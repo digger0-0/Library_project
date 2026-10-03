@@ -1,38 +1,31 @@
 'use client'
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
-import { SessionData } from "@/lib/types";
-import { logout, verifySession } from "@/lib/auth";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { logout } from "@/lib/auth";
 import { useToast } from "./Toast";
+import { useAuth } from "./Auth";
 
 export function NavigationBar(){
-  const [sessionData, setSessionData] = useState<SessionData | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [isLogout, setIsLogout] = useState<Boolean>(false);
+  const { sessionData, refresh } = useAuth();
+  const [isLogout, setIsLogout] = useState<boolean>(false);
   const [ scrollY, setScrollY ] = useState<number>(0);
   const toast = useToast();
-  const pathname = usePathname();
+  const router = useRouter();
 
-  const handleLogout = () => {
-    logout().then((res) => {
-      if(res.success){
-        setSessionData(null);
-        setIsLogout(false);
-      }else{
-        toast(res.message, true);
-      }
-    });
+  const handleLogout = async () => {
+    const res = await logout();
+    if(res.success){
+      setIsLogout(false);
+      await refresh();      // clear the shared session -> navbar updates immediately
+      router.refresh();     // re-run server components so the proxy redirects
+    }else{
+      toast(res.message, true);
+    }
   };
 
   useEffect(() => {
-    setLoading(true);
-    verifySession().then((res) => {
-      setSessionData(res);
-      setLoading(false);
-    });
-
     const handleScroll = () => {
       setScrollY(window.scrollY);
     };
@@ -42,7 +35,7 @@ export function NavigationBar(){
     return () => {
       window.removeEventListener("scroll", handleScroll);
     }
-  }, [pathname]);
+  }, []);
 
   return (
     <div style={{padding: "0px 0px 3px 0px", position: "sticky", top: 0}}>
@@ -54,12 +47,14 @@ export function NavigationBar(){
           <Link className="btn" href={"/announcement"}>Announcement</Link>
           <Link className="btn" href={"/bookSearch"}>Book Search</Link>
           <Link className="btn" href={"/rentalRanking"}>Leaderboard</Link>
+          <Link className="btn" href={"/bookRanking"}>Book Ranking</Link>
           {
             /* logged in */
             sessionData && <>
               <br/>
               <Link className="btn" href={"/user/rentalRecords"}>Rental Records</Link>
               <Link className="btn" href={"/user/ebook"}>Ebook</Link>
+              <Link className="btn" href={"/user/info"}>Info</Link>
             </>
           }
           {
