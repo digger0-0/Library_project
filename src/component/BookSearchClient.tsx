@@ -54,11 +54,13 @@ export function BookSearchClient(
           {(checkRented && books[detailId].bookType == "Ebook")&&
             <div>
               <button
+                className="btn"
                 disabled={isPending || books[detailId].rented || Number(books[detailId].status.split(' ')[0]) <= 0}
                 onClick={
                   () => {
+                    if(books[detailId].ebook_id == null) return;
                     startTransition(async () => {
-                      const res = await rentEbook(books[detailId].ebook_id);
+                      const res = await rentEbook(books[detailId].ebook_id as number);
                       toast(res.message, !res.success);
                     });
                   }

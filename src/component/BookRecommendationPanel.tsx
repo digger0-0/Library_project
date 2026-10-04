@@ -8,6 +8,7 @@ export async function BookRecommendationPanel(){
 
   const sessionData = await verifySession();
   const userId = sessionData?.userId ?? null;
+  const hideFields = userId? []: ["rented"];
   const db = getDb();
   const book = db.prepare(`
     WITH combined_books AS (
@@ -18,7 +19,7 @@ export async function BookRecommendationPanel(){
         'Book' AS bookType,
         CASE
           WHEN user_id = ? AND return_date IS NULL THEN 1
-          ELSE 0
+          ELSE NULL
         END AS rented
       FROM book_details
       UNION
@@ -56,7 +57,7 @@ export async function BookRecommendationPanel(){
     <table>
       <tbody>
         <tr><th colSpan={2}>Book of the day</th></tr>
-        { BookSearchDetailFields.map((f, i) => (
+        { (BookSearchDetailFields.filter(f => !hideFields.includes(f))).map((f, i) => (
           book[f] != null && (
             <tr key={i}>
               <td>{f}</td>

@@ -77,7 +77,10 @@ export function DeleteBookPanel(){
   }
 
   useEffect(() => {
-    if (state) toast(state.message, !state.success);
+    if (state) {
+      toast(state.message, !state.success);
+      setSubmit(false);   // collapse the Confirm/Cancel row once the action returns
+    }
   }, [state]);
 
   return (
@@ -86,8 +89,8 @@ export function DeleteBookPanel(){
       {/* Option zone */}
       <div>
         <button style={{backgroundColor: (deleteMode == "manuel"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => setDeleteMode("manuel")}>Manuel delete</button>
-        <button style={{backgroundColor: (deleteMode == "csvText"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => setDeleteMode("csvText")}>CSV Text delete</button>
-        <button style={{backgroundColor: (deleteMode == "csvFile"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => setDeleteMode("csvFile")}>CSV File delete</button>
+        <button style={{backgroundColor: (deleteMode == "csvText"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => {setDeleteMode("csvText"); setSubmit(false);}}>CSV Text delete</button>
+        <button style={{backgroundColor: (deleteMode == "csvFile"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => {setDeleteMode("csvFile"); setSubmit(false);}}>CSV File delete</button>
       </div>
       {/* input mode */}
         {(() => {
@@ -99,11 +102,11 @@ export function DeleteBookPanel(){
                     <tbody>
                       <tr>
                         <td>Book id</td>
-                        <td><input type="text" name="isbn" required/></td>
+                        <td><input type="text" name="isbn" required autoComplete="off"/></td>
                       </tr>
                       <tr>
                         <td>book_number</td>
-                        <td><input type="text" name="book_number" required/></td>
+                        <td><input type="text" name="book_number" required autoComplete="off"/></td>
                       </tr>
                       <tr>{
                         submit? (

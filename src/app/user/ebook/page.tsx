@@ -1,8 +1,14 @@
 import { BigWordPage } from "@/component/bigWordPage";
 import { verifySession } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { fmtDate, makeCell } from "@/lib/format";
 import { EbookViewerInfo, EbookViewerInfoFields } from "@/lib/types";
 import Link from "next/link";
+
+const cell = makeCell<EbookViewerInfo>({
+  rental_date: fmtDate,
+  due_date: fmtDate,
+});
 
 export default async function EbookPage(){
   const sessionData = await verifySession();
@@ -12,6 +18,7 @@ export default async function EbookPage(){
   const ebooks = db.prepare(`
       SELECT
         e.ebook_id,
+        e.isbn,
         e.title,
         e.author,
         e.publisher,
@@ -28,7 +35,7 @@ export default async function EbookPage(){
         END AS status
       FROM ebook_rentals r
       LEFT JOIN ebooks e ON r.ebook_id = e.ebook_id
-      WHERE r.user_id = ? AND status != 'returned'
+      WHERE r.user_id = ? AND status != 'returned' AND e.deleted_at IS NULL
     `).all(
       userId
     ) as EbookViewerInfo[];
@@ -50,7 +57,7 @@ export default async function EbookPage(){
           {ebooks.map((ebook, i) => (
             <tr key={i}>
               {EbookViewerInfoFields.map((f, j) => (
-                <td key={j}>{ebook[f]}</td>
+                <td key={j}>{cell(f, ebook[f])}</td>
               ))}
               <td>
                 {ebook.status == "overdue" ? (
@@ -59,6 +66,7 @@ export default async function EbookPage(){
                   <Link
                     className="btn"
                     href={`/user/ebook/viewer/${ebook.ebook_id}`}
+                    scroll={false}
                   >
                     View
                   </Link>

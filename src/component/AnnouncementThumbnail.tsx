@@ -1,11 +1,16 @@
 'use client'
 
+import { fmtDate, makeCell } from "@/lib/format";
 import { Announcement } from "@/lib/types";
 import Link from "next/link";
 
 const MAXROWS = 3;
 const TITLELENGTH = 30;
 const CONTENTLENGTH = 50;
+
+const cell = makeCell<Announcement>({
+  ann_date: fmtDate
+});
 
 export function AnnouncementThumbnail(
   { announcement, full }
@@ -42,7 +47,7 @@ export function AnnouncementThumbnail(
           {content}
         </p>
       }
-      <p>{ann_date}</p>
+      <p>{cell("ann_date", announcement.ann_date)}</p>
     </Link>
   );
 }

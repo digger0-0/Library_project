@@ -2,6 +2,14 @@
 
 import { RentalRecord, rentalRecordFields } from "@/lib/types";
 import { BigWordPage } from "../bigWordPage";
+import { fmtCount, fmtDate, makeCell } from "@/lib/format";
+
+const cell = makeCell<RentalRecord>({
+  rental_date: fmtDate,
+  due_date: fmtDate,
+  return_date: fmtDate,
+  days_overdue: fmtCount,
+});
 
 export function RentalListClient(
   { rentalRecords }:
@@ -28,7 +36,7 @@ export function RentalListClient(
               <tr key={i}>
                 {rentalRecordFields.map((f, j) => (
                   <td key={j}>
-                    <label>{r[f]}</label>
+                    <label>{cell(f, r[f])}</label>
                   </td>
                 ))}
               </tr>

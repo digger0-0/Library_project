@@ -19,7 +19,7 @@ export default function signupPage(){
       <h1>Signup</h1>
       <form action={action}>
         <label>Username</label><br/>
-        <input type="text" name="username" required/><br/>
+        <input type="text" name="username" required autoComplete="off"/><br/>
         <label>Password</label><br/>
         <input type="password" name="password" required/><br/>
         <label>Retype password</label><br/>

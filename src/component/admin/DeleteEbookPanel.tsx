@@ -77,17 +77,20 @@ export function DeleteEbookPanel(){
     }
   
     useEffect(() => {
-      if (state) toast(state.message, !state.success);
+      if (state) {
+        toast(state.message, !state.success);
+        setSubmit(false);   // collapse the Confirm/Cancel row once the action returns
+      }
     }, [state]);
 
   return (
-    <div className="enclose" onSubmit={() => {setSubmit(false)}}>
+    <div className="enclose">
       Remove ebook
       {/* Option zone */}
       <div>
         <button style={{backgroundColor: (deleteMode == "manuel"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => setDeleteMode("manuel")}>Manuel delete</button>
-        <button style={{backgroundColor: (deleteMode == "csvText"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => setDeleteMode("csvText")}>CSV Text delete</button>
-        <button style={{backgroundColor: (deleteMode == "csvFile"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => setDeleteMode("csvFile")}>CSV File delete</button>
+        <button style={{backgroundColor: (deleteMode == "csvText"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => {setDeleteMode("csvText"); setSubmit(false)}}>CSV Text delete</button>
+        <button style={{backgroundColor: (deleteMode == "csvFile"? "lightgray": "white")}} className="btn" disabled={loading === true} onClick={() => {setDeleteMode("csvFile"); setSubmit(false)}}>CSV File delete</button>
       </div>
       <div>
         <label>{"Remove file: "}</label>
@@ -104,7 +107,7 @@ export function DeleteEbookPanel(){
                     <tbody>
                       <tr>
                         <td>Ebook_id</td>
-                        <td><input type="text" name="ebook_id" required/></td>
+                        <td><input type="text" name="ebook_id" required autoComplete="off"/></td>
                       </tr>
                       <tr>{
                         submit? (

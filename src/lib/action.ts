@@ -288,28 +288,27 @@ export async function deleteBook(formState: FormSate | undefined, formData: Form
     // verify valid input
     const db = getDb();
     const res = db.prepare(`
-      SELECT 1 FROM books WHERE isbn = ? AND book_number = ?
-    `).get(isbn, book_number);
+      SELECT b.isbn as placeHolder,
+      (SELECT COUNT(*) FROM rentals WHERE isbn = b.isbn AND book_number = b.book_number AND return_date IS NULL) as rentCount
+      FROM books b
+      WHERE b.isbn = ? AND b.book_number = ? AND b.deleted_at IS NULL
+    `).get(isbn, book_number) as { placeHolder: number, rentCount: number};
 
-    if(!res){
+    if(!res.placeHolder){
       logger.warning("invalid input", {fn: "deleteBook", user_id: sessionData.userId});
       return { success: false, message: `Invalid input` };
     }
 
-    // block delete when the book has rental history (the FK would reject it anyway)
-    const rented = db.prepare(`
-      SELECT 1 FROM rentals WHERE isbn = ? AND book_number = ? LIMIT 1
-    `).get(isbn, book_number);
-    if(rented){
-      logger.warning("book has rental history", {fn: "deleteBook", user_id: sessionData.userId, isbn, book_number});
-      return { success: false, message: `Cannot delete: book has rental history` };
+    if(res.rentCount > 0){
+      logger.warning("Book in loan", {fn: "deleteBook", user_id: sessionData.userId, isbn, book_number});
+      return { success: false, message: `Book in loan` };
     }
 
     // Operate
     db.prepare(`
-      DELETE FROM books WHERE isbn = ? AND book_number = ?  
-    `).run(isbn, book_number);
-    logger.info("Book deleted", {fn: "deleteBook", isbn, book_number, user_id: sessionData.userId});
+      UPDATE books SET deleted_at = ? WHERE isbn = ? AND book_number = ?
+    `).run(sqliteNow(), isbn, book_number);
+    logger.info("Book deleted", {fn: "deleteBook", isbn, book_number, user_id: sessionData.userId, deleted_at: sqliteNow()});
 
     revalidatePath("/admin/booksManagement");
     revalidatePath("/bookSearch");
@@ -538,28 +537,28 @@ export async function deleteEbook(formState: FormSate | undefined, formData: For
     // verify valid input
     const db = getDb();
     const res = db.prepare(`
-      SELECT filename FROM ebooks WHERE ebook_id = ?
-    `).get(ebook_id) as { filename: string } | undefined;
+      SELECT
+        filename,
+        (SELECT COUNT(*) FROM ebook_rentals WHERE ebook_id = ? AND return_date IS NULL) as rentCount
+      FROM ebooks WHERE ebook_id = ? AND deleted_at IS NULL
+    `).get(ebook_id, ebook_id) as { filename: string, rentCount: number } | undefined;
 
-    if(!res){
+    if(!res?.filename){
       logger.warning("invalid input", {fn: "deleteEbook", user_id: sessionData.userId});
       return { success: false, message: `Invalid input` };
     }
 
-    // block delete when the ebook has rental history (the FK would reject it anyway)
-    const rented = db.prepare(`
-      SELECT 1 FROM ebook_rentals WHERE ebook_id = ? LIMIT 1
-    `).get(ebook_id);
-    if(rented){
-      logger.warning("ebook has rental history", {fn: "deleteEbook", user_id: sessionData.userId, ebook_id});
-      return { success: false, message: `Cannot delete: ebook has rental history` };
+    // check no one in borrow
+    if(res.rentCount > 0){
+      logger.warning("Ebook still on loan", {fn: "deleteEbook", user_id: sessionData.userId, ebook_id});
+      return { success: false, message: `Ebook still on loan` };
     }
 
     // Operate
     db.prepare(`
-      DELETE FROM ebooks WHERE ebook_id = ?
-    `).run(ebook_id);
-    logger.info("Ebook deleted", {fn: "deleteEbook", ebook_id, user_id: sessionData.userId});
+      UPDATE ebooks SET deleted_at = ? WHERE ebook_id = ?
+    `).run(sqliteNow(), ebook_id);
+    logger.info("Ebook deleted", {fn: "deleteEbook", ebook_id, user_id: sessionData.userId, deleted_at: sqliteNow()});
 
     // remove file (best-effort: a missing file must not make the delete look failed)
     if(doRemoveFile && res.filename){
@@ -581,7 +580,7 @@ export async function deleteEbook(formState: FormSate | undefined, formData: For
     revalidatePath("/admin/booksManagement");
     revalidatePath("/bookSearch");
     revalidatePath("/user/rentalRecords");
-    return { success: true, message: `Ebook:(${ebook_id}) deleted. doRemoveFile: ${doRemoveFile}` };
+    return { success: true, message: `Ebook:(${ebook_id}) deleted. Remove file: ${doRemoveFile}` };
   }catch(err){
     logger.error("deleteEbook failed", {
       fn: "deleteEbook",

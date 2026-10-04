@@ -1,8 +1,13 @@
 import { BigWordPage } from "@/component/bigWordPage";
 import { ReturnButton } from "@/component/ReturnButton";
 import { getDb } from "@/lib/db";
+import { fmtDate, makeCell } from "@/lib/format";
 import { logger } from "@/lib/logger";
 import { Announcement } from "@/lib/types";
+
+const cell = makeCell<Announcement>({
+  ann_date: fmtDate
+});
 
 export default async function AnnouncementDetailPage({
   params,
@@ -21,7 +26,7 @@ export default async function AnnouncementDetailPage({
     <div className="enclose" style={{height: "100%"}}>
       <ReturnButton/>
       <div>
-        <p>{announcement.ann_date}</p>
+        <p>{cell("ann_date", announcement.ann_date)}</p>
         <h3 style={{overflowWrap: "anywhere"}}>{announcement.title}</h3>
         <p className="whitespace-pre-wrap enclose" style={{overflowWrap: "anywhere"}}>{announcement.content}</p>
       </div>

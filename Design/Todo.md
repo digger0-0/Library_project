@@ -47,7 +47,7 @@ Pre-Alpha test on 5/8/2026
 - [X] 27. release v1.0.0 (portable zip, tagged)
 alpha test 21/8
 - [X] 1. rental ranking thumbnail detail not consistent
-- [ ] 2. all display date should conver to local time zone   <!-- deferred: handle later -->
+- [X] 2. all display date should conver to local time zone   <!-- deferred: handle later -->
 - [X] 3. frontend all notification to toast
 - [X] 4. block spam at frontend
 
@@ -74,7 +74,21 @@ Hard review 10/9
 - [X] 5. add popular book ranking
 - [ ] 6. batch setup user account
 - [ ] 7. ensure naming consistency in aciton.ts
-- [ ] 8. fix input confirm button remains after form submit
-- [ ] 9. make book delete add tag (will not lose records)
+- [X] 8. fix input confirm button remains after form submit
+- [X] 9. make book delete add tag (will not lose records)
 - [X] 10. feature: view full toast
 - [ ] 11. make a recapcha
+
+bug fix / improvement on user review 3/10
+- [X] 1. remove book search autocomplete
+- [X] 2. fix book search display and sql misalignment (no due date is queried but displayed)
+- [X] 3. fix book search rented field 0 1 display issue
+  - switch to 1 or null
+- [X] 4. fix book search num data only limit row for book and ebook individually (i.e. bug: restrain 5 => 5 book + 5 ebook)
+- [X] 5. always direct new book search to page 1
+- [X] 6. booksearch ebook rent set class to "btn"
+- [X] 7. fix rentalRanking thumbnail ranking wrong display (diff ranking for same rental count)
+- [X] 8. fix book of the day show rented when unlogged in
+- [X] 9. ebook page, no isbn shown
+- [X] 10. ebook viewer, when go through navi bar, no progress restored
+- [X] 11. set no autocomplete for all input

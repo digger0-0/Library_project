@@ -15,6 +15,7 @@ export interface Book {
   author: string;
   publisher: string;
   classification: string;
+  deleted_at: string | null;    // soft delete: NULL = active
 }
 
 export interface Classification {
@@ -55,6 +56,7 @@ export interface Ebook {
   classification: string;
   copies: number;      // total number of identical digital copies
   filename: string;    // .txt file name in the ebooks/ folder
+  deleted_at: string | null;    // soft delete: NULL = active
 }
 export const EbookFields: (keyof Ebook)[] = ["ebook_id", "isbn", "title", "author", "publisher", "classification", "copies", "filename"];
 
@@ -70,7 +72,8 @@ export interface EbookRental {
 
 // view
 
-export interface BookDetails extends Book {
+// `book_details` excludes soft-deleted rows, so the view shape has no `deleted_at`
+export interface BookDetails extends Omit<Book, "deleted_at"> {
   full_classification: string | null;
   class_icon: string | null;
   // Rental status (null = on shelf)
@@ -85,7 +88,7 @@ export interface BookDetails extends Book {
   renew: number | null;
 }
 
-export interface EbookDetails extends Omit<Ebook, "filename"> {
+export interface EbookDetails extends Omit<Ebook, "filename" | "deleted_at"> {
   full_classification: string | null;
   class_icon: string | null;
   available: number;   // available copies (copies - active loans)
@@ -104,8 +107,8 @@ export interface EbookDetails extends Omit<Ebook, "filename"> {
 // insert types
 
 export type NewUser = Omit<User, "session" | "user_id">;
-export type NewBook = Omit<Book, "book_number">;
-export type NewEbook = Omit<Ebook, "ebook_id">;
+export type NewBook = Omit<Book, "book_number" | "deleted_at">;
+export type NewEbook = Omit<Ebook, "ebook_id" | "deleted_at">;
 export const NewEbookFields: (keyof NewEbook)[] = ["isbn", "title", "author", "publisher", "classification", "copies", "filename"];
 export type NewClassification = Omit<Classification, never>;
 export type NewRental = Omit<Rental, "rental_id" | "return_date" | "renew">;
@@ -136,8 +139,8 @@ export interface EbookRentalRecordsUser extends Omit<EbookRentalRecords, "ebook_
 }
 export const EbookRentalRecordUserFields: (keyof EbookRentalRecordsUser)[] = ["ebook_rental_id", "title", "status", "rental_date", "due_date", "return_date", "days_overdue", "renew"];
 
-export type BookSearchDetail = Omit<RentalRecord, "rental_id" | "rental_date" | "return_date" | "renew" | "days_overdue" | "classification" | "user_id" | "username"> & {bookType: "Book" | "Ebook", ebook_id: number, rented: boolean};
-export const BookSearchDetailFields: (keyof BookSearchDetail)[] = ["isbn", "book_number", "title", "author", "publisher", "full_classification", "class_icon", "due_date", "status", "bookType", "ebook_id", "rented"];
+export type BookSearchDetail = Omit<RentalRecord, "rental_id" | "rental_date" | "return_date" | "renew" | "days_overdue" | "classification" | "user_id" | "username" | "due_date"> & {bookType: "Book" | "Ebook", ebook_id: number | null, rented: boolean | null};
+export const BookSearchDetailFields: (keyof BookSearchDetail)[] = ["isbn", "book_number", "title", "author", "publisher", "full_classification", "class_icon", "status", "bookType", "ebook_id", "rented"];
 
 export interface UserRecord extends User {
   overdue_count: number;
@@ -386,7 +389,7 @@ export interface Log {
   err?: unknown
 }
 
-export interface EbookViewerInfo extends Omit<Ebook, "copies" | "filename"> {
+export interface EbookViewerInfo extends Omit<Ebook, "copies" | "filename" | "deleted_at"> {
   rental_date: string;
   due_date: string;
   status: "returned" | "overdue" | "rent";

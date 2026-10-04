@@ -23,7 +23,7 @@ export function RentBookPanel(){
           {fields.map((f, i) => (
             <tr key={i}>
               <td><label>{f}</label></td>
-              <td><input type="text" name={f} required/></td>
+              <td><input type="text" name={f} required autoComplete="off"/></td>
             </tr>
           ))}
           </tbody>

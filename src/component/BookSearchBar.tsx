@@ -12,6 +12,7 @@ export function BookSearchBar(){
     (formData: FormData) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("keyword", formData.get("keyword")?.toString().trim() || "");
+      params.set("page", "1");
       router.push(`/bookSearch/?${params.toString()}`);
     },
     [router, searchParams]
@@ -19,7 +20,7 @@ export function BookSearchBar(){
 
   return (
     <form action={handleSubmit} style={{display: "flex", justifyContent: "center"}}>
-      <input type="text" name="keyword" placeholder="Title/ISBN/Author" defaultValue={keyword}/>
+      <input type="text" name="keyword" placeholder="Title/ISBN/Author" defaultValue={keyword} autoComplete="off"/>
       <input type="submit" value={"Search"}/>
     </form>
   );

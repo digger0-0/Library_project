@@ -15,7 +15,11 @@ export function EbookViewer(
 
   useEffect(() => {
     const localStorageKey = `${ebook.ebook_id} scrollProgress`;
+    const saved = Number(localStorage.getItem(localStorageKey) ?? 0);
+    scrollY.current = saved;
+
     let saveTimer: ReturnType<typeof setTimeout> | null = null;
+    let leaving = false;
 
     // write the latest position to localStorage
     const handleSave = () => {
@@ -24,6 +28,7 @@ export function EbookViewer(
 
     // the user stops scrolling for a moment
     const handleScroll = () => {
+      if(leaving) return;
       scrollY.current = window.scrollY;
       if (saveTimer) clearTimeout(saveTimer);
       saveTimer = setTimeout(handleSave, 500);
@@ -35,6 +40,18 @@ export function EbookViewer(
     const savedProgress = localStorage.getItem(localStorageKey);
     if(savedProgress) window.scrollTo(0, Number(savedProgress));
 
+    // save before clicking any links
+    const onLinkClick = (e: MouseEvent) => {
+      if ((e.target as HTMLElement)?.closest?.("a")) {
+        handleSave();
+        leaving = true;
+      }
+    };
+    // stating page is in transition, no futher progress save
+    const onPopState = () => { leaving = true; };
+    document.addEventListener("click", onLinkClick, true);
+    window.addEventListener("popstate", onPopState);
+
     // save when the tab is hidden or the page truly unloads
     const onVisibility = () => {
       if(document.hidden) handleSave();
@@ -45,11 +62,12 @@ export function EbookViewer(
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("click", onLinkClick, true);
+      window.removeEventListener("popstate", onPopState);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", handleSave);
       window.removeEventListener("beforeunload", handleSave);
       if (saveTimer) clearTimeout(saveTimer);
-      handleSave();
     };
   }, [ebook.ebook_id]);
 

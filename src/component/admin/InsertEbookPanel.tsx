@@ -88,7 +88,7 @@ export function InsertEbookPanel(){
                     <tr key={i}>
                       <td><label>{f}</label></td>
                       <td>
-                        <input name={f} type="text" required/>
+                        <input name={f} type="text" required autoComplete="off"/>
                       </td>
                     </tr>
                   ))}
@@ -122,7 +122,7 @@ export function InsertEbookPanel(){
                       <tr key={i}>
                         <td><label>{f}</label></td>
                         <td>
-                          <input name={f} type="text" required/>
+                          <input name={f} type="text" required autoComplete="off"/>
                         </td>
                       </tr>
                     ))}

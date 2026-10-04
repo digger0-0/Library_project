@@ -32,6 +32,7 @@ export async function initDB() {
       author          VARCHAR(20) NOT NULL,
       publisher       VARCHAR(20) NOT NULL,
       classification  CHAR(10) NOT NULL,
+      deleted_at      DATETIME DEFAULT NULL,   -- soft delete: NULL = active
       PRIMARY KEY (isbn, book_number),
       FOREIGN KEY (classification) REFERENCES classifications(classification)
     );
@@ -78,6 +79,7 @@ export async function initDB() {
       classification  CHAR(10) NOT NULL,
       copies       INTEGER NOT NULL DEFAULT 1, -- number of identical digital copies
       filename        VARCHAR(255) NOT NULL,      -- .txt file name in the ebooks/ folder
+      deleted_at      DATETIME DEFAULT NULL,      -- soft delete: NULL = active
       FOREIGN KEY (classification) REFERENCES classifications(classification)
     );
   `);
@@ -144,7 +146,8 @@ export async function initDB() {
       ORDER BY r2.rental_id DESC
       LIMIT 1
     )
-    LEFT JOIN users u ON r.user_id = u.user_id;
+    LEFT JOIN users u ON r.user_id = u.user_id
+    WHERE b.deleted_at IS NULL;
   `);
 
   db.exec(`DROP VIEW IF EXISTS ebook_details;`);
@@ -202,6 +205,7 @@ export async function initDB() {
           ORDER BY ebook_rental_id DESC LIMIT 1
         ))
     )
-    LEFT JOIN users u ON r.user_id = u.user_id;
+    LEFT JOIN users u ON r.user_id = u.user_id
+    WHERE e.deleted_at IS NULL;
   `);
 }

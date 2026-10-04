@@ -33,7 +33,7 @@ export default async function EbookViewerPage({
       e.filename
     FROM ebook_details d
     LEFT JOIN ebooks e ON e.ebook_id = d.ebook_id
-    WHERE d.ebook_id = ? AND d.user_id = ? AND d.status = 'rent'
+    WHERE d.ebook_id = ? AND d.user_id = ? AND d.status = 'rent' AND e.deleted_at IS NULL
   `).get(ebook_id, userId) as Ebook;
   
   if(!ebook){

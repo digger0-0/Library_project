@@ -1,12 +1,14 @@
 'use client'
 
 import { BookRankings, BookRankingsInfoFields, BookRankingTypes } from "@/lib/types";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function BookRankingPanel(
   { full, BookRankings }:
   { full: boolean, BookRankings: BookRankings }
 ){
+  const router = useRouter();
   const [ rankingType, setRankingType ] = useState<(typeof BookRankingTypes)[number]>("monthly");
   let rankings: Record<keyof BookRankings, number[]> = { history: [], monthly: [], yearly: [] };
   let rowSpans: Record<keyof BookRankings, number[]> = { history: [], monthly: [], yearly: [] };
@@ -30,8 +32,10 @@ export function BookRankingPanel(
   const table = (f: (typeof BookRankingTypes)[number], i: number) => {
     return (
       <table key={i}>
-        <caption>{f}</caption>
         <tbody>
+          <tr>
+            <td colSpan={4}>{f.toString()}</td>
+          </tr>
           <tr>
             <th>Ranking</th>
             { BookRankingsInfoFields.map((f, k) => (
@@ -64,8 +68,8 @@ export function BookRankingPanel(
     );
   }else{
     return (
-      <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
-        <div>
+      <div className="enclose" style={{display: "flex", flexDirection: "column", alignItems: "center"}} onClick={() => {router.push("/bookRanking")}}>
+        <div onClick={(e) => {e.stopPropagation()}}>
           <button className="btn" onClick={() => {setRankingType("monthly")}} disabled={rankingType === "monthly"}>Monthly</button>
           <button className="btn" onClick={() => {setRankingType("yearly")}} disabled={rankingType === "yearly"}>Yearly</button>
           <button className="btn" onClick={() => {setRankingType("history")}} disabled={rankingType === "history"}>History</button>

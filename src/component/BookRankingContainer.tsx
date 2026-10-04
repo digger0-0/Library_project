@@ -16,7 +16,7 @@ export function BookRankingContainer({ full = false }: { full?: boolean }){
         b.author,
         COUNT(*) AS count
       FROM rentals r, books b
-      WHERE r.isbn = b.isbn AND r.book_number = b.book_number
+      WHERE r.isbn = b.isbn AND r.book_number = b.book_number AND b.deleted_at IS NULL
         ${clauses.join("\n        ")}
       GROUP BY b.isbn
       ORDER BY count DESC

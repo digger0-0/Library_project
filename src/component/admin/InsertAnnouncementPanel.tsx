@@ -25,7 +25,7 @@ export function InsertAnnouncementPanel(){
       <h3>Insert Announcement</h3>
       <form action={formAction}>
         <label>Title</label><br/>
-        <input type="text" name="title" required/><br/>
+        <input type="text" name="title" required autoComplete="off"/><br/>
         <label>Content</label><br/>
         <textarea name="content" required/><br/>
         <input type="submit" value={"Insert"}/>

@@ -31,35 +31,41 @@ export function RentalRankingPanel({
       }
     }
   });
+
+  const table = (f: (typeof RentalRankingFields[number]), i: number) => {
+    return (
+      <table key={i}>
+        <tbody>
+          <tr>
+            <td colSpan={3}>{f.toString()}</td>
+          </tr>
+          <tr>
+            <th>Ranking</th>
+            <th>Username</th>
+            <th>RentalCount</th>
+          </tr>
+          { RentalRankings[f].length > 0 ?
+            RentalRankings[f].map((rentalRanking, i) => (
+              <tr key={i}>
+                <td rowSpan={rowSpans[f][i]} hidden={rowSpans[f][i] == 0}>{rankings[f][i]}</td>
+                <td>{rentalRanking.username}</td>
+                <td>{rentalRanking.rentalCount}</td>
+              </tr>
+            )) :
+            <tr>
+              <td colSpan={3}>No record yet</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    );
+  }
   
   if(full){
     return (
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 24, alignItems: "flex-start" }}>
         { RentalRankingFields.map((f, i) => (
-          <table key={i}>
-            <tbody>
-              <tr>
-                <td colSpan={3}>{f.toString()}</td>
-              </tr>
-              <tr>
-                <th>Ranking</th>
-                <th>Username</th>
-                <th>RentalCount</th>
-              </tr>
-              { RentalRankings[f].length > 0 ?
-                RentalRankings[f].map((rentalRanking, i) => (
-                  <tr key={i}>
-                    <td rowSpan={rowSpans[f][i]} hidden={rowSpans[f][i] == 0}>{rankings[f][i]}</td>
-                    <td>{rentalRanking.username}</td>
-                    <td>{rentalRanking.rentalCount}</td>
-                  </tr>
-                )) :
-                <tr>
-                  <td colSpan={3}>No record yet</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          table(f, i)
           ))
         }
       </div>
@@ -67,20 +73,21 @@ export function RentalRankingPanel({
   }
 
   return (
-    <div className="enclose"> 
+    <div className="enclose" onClick={() => {router.push("/rentalRanking")}}> 
       <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
         {RentalRankingFields.map((t, i) => (
           <button
             className="btn"
             key={i}
-            onClick={() => {setType(t)}}
+            onClick={(e) => {e.stopPropagation() ;setType(t)}}
             style={{backgroundColor: (type == t? "lightgray": "white")}}
           >
             {t.toString()}
           </button>
         ))}
       </div>
-      <table onClick={() => {router.push("/rentalRanking")}}>
+      { table(type, 0) }
+      {/* <table onClick={() => {router.push("/rentalRanking")}}>
         <tbody>
           <tr>
             <th>Ranking</th>
@@ -100,7 +107,7 @@ export function RentalRankingPanel({
             </tr>
           }
         </tbody>
-      </table>
+      </table> */}
     </div>
   );
 }

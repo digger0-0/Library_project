@@ -17,7 +17,7 @@ export default function LoginPage(){
     <h1>Login</h1>
     <form action={action}>
       <label>Username:</label><br/>
-      <input type="text" name="username" required/><br/>
+      <input type="text" name="username" required autoComplete="off"/><br/>
       <label>Password:</label><br/>
       <input type="password" name="password" required/><br/>
       <input type="submit" value={"Login"}/><br/>

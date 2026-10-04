@@ -5,6 +5,20 @@ import { useState, useTransition } from "react";
 import { renewBook, renewEbook, returnEbook } from "@/lib/action";
 import { useToast } from "./Toast";
 import { BigWordPage } from "./bigWordPage";
+import { fmtCount, fmtDate, makeCell } from "@/lib/format";
+
+const bookCell = makeCell<RentalRecordUser>({
+  rental_date: fmtDate,
+  due_date: fmtDate,
+  return_date: fmtDate,
+  days_overdue: fmtCount
+});
+const ebookCell = makeCell<EbookRentalRecordsUser>({
+  rental_date: fmtDate,
+  due_date: fmtDate,
+  return_date: fmtDate,
+  days_overdue: fmtCount
+});
 
 export function RentalRecordsClient(
   { rentalRecords, ebookRentalRecords }:
@@ -36,7 +50,7 @@ export function RentalRecordsClient(
                 {rentalRecords.map((r, i) => (
                   <tr key={i} onClick={() => {setDetailId([true, i])}}>
                     { RentalRecordUserFields.map((f, j) => (
-                      <td key={j}>{r[f]}</td>
+                      <td key={j}>{bookCell(f, r[f])}</td>
                     ))}
                     {((r.renew || 0) < 5 && r.status == "rent") && (
                       <td>
@@ -72,7 +86,7 @@ export function RentalRecordsClient(
                   { ebookRentalRecords.map((r, i) => (
                     <tr key={i} onClick={() => {setDetailId([false, i])}}>
                       { EbookRentalRecordUserFields.map((f, j) => (
-                        <td key={j}>{r[f]}</td>
+                        <td key={j}>{ebookCell(f, r[f])}</td>
                       ))}
                       <td>
                         {( (r.renew || 0) < 5  && r.status == "rent") && (

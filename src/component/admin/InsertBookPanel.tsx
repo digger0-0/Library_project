@@ -109,7 +109,7 @@ export function InsertBooksPanel(){
             {fields.slice(0, -1).map((f, i) => (
               <tr key={i}>
                 <td><label>{f}</label></td>
-                <td><input type="text" name={f} required/></td>
+                <td><input type="text" name={f} required autoComplete="off"/></td>
               </tr>
             ))}
             {/* classification */}
