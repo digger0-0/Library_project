@@ -1,0 +1,3 @@
+export const CAPTCHA_H = 200, CAPTCHA_W = 300, PIECE_SIZE = 70, PIECE_TOP = 100;
+export const TRAVEL = CAPTCHA_W - PIECE_SIZE;
+export const TOLERANCE = 10;

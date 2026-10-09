@@ -7,17 +7,13 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { logger } from "./logger";
 import { getClientIp } from "./request";
+import { decryptSession, ALGORITHM, SECRET, SESSION_MAX_AGE_MS } from "./session";
+import { FormSate } from "./types";
+import { verifyCaptcha } from "./captcha";
 
 if(!process.env.SESSION_SECRET){
   logger.fatal("missing session secret", {fn: "auth.ts"});
 }
-
-const SECRET = crypto
-  .createHash("sha256")
-  .update(process.env.SESSION_SECRET as string)
-  .digest();
-
-const ALGORITHM = "aes-256-cbc";
 
 const SALT = "salt";
 
@@ -74,51 +70,28 @@ export async function signSession(
 export async function verifySession(
   is_high_level: boolean = false,
   session?: string | undefined,
-  maxAgeMs: number = MAXAGEMS,
+  maxAgeMs: number = SESSION_MAX_AGE_MS,
 ): Promise<SessionData | null> {
   try {
     const cookie = await cookies();
     if(!session){
       session = cookie.get("session")?.value;
-      if(!session){
-        return null;
-      }
-    }
-    const [iv, encryptedData] = session.split('|');
-    // extract data
-    const decipher = crypto.createDecipheriv(
-      ALGORITHM,
-      SECRET,
-      Buffer.from(iv, "hex")
-    );
-    let decrypted = decipher.update(encryptedData, "hex", "utf8");
-    decrypted += decipher.final("utf8");
-    // destruct data
-    const [ userIdStr, timestamp, role] = decrypted.split("|");
-    const userId = Number(userIdStr);
-    const createdAt = Number(timestamp);
-    const username = cookie.get("username")?.value;
-    // expire key
-    if (Date.now() - createdAt > maxAgeMs){
-      return null;
-    }
-    // invalid key
-    if (role !== "user" && role !== "admin"){
-      return null;
+      if(!session) return null;
     }
 
-    // high level auth
+    // grade 1 → shared, dependency-free implementation
+    const payload = decryptSession(session, maxAgeMs);
+    if(!payload) return null;
+
+    // grade 2 → DB compare (only reached from route/action code, never the middleware)
     if(is_high_level){
-      // fetch from db
       const db = getDb();
-      const db_sessionKey = db.prepare('SELECT * FROM users WHERE user_id = ?').get(userId) as User;
-
-      if(db_sessionKey.session != session){
-        return null;
-      }
+      const row = db.prepare('SELECT session FROM users WHERE user_id = ?')
+        .get(payload.userId) as { session: string | null } | undefined;
+      if(row?.session !== session) return null;
     }
 
-    return { userId, role: role as Role, createdAt, username };
+    return { ...payload, username: cookie.get("username")?.value };
   } catch(err){
     logger.error("verifySession failed", {
       fn: "verifySession",
@@ -148,15 +121,17 @@ export async function encryptPassword(password: string){
   return key.toString('hex');
 }
 
-export type FormSate = {
-  success: boolean;
-  message: string;
-}
-
 export async function login(prevState: FormSate | undefined, formData: FormData): Promise<FormSate>{
   try{
     const username = formData.get("username") as string;
     const password = formData.get('password') as string;
+
+    const captcha = verifyCaptcha(formData);   // consumes the challenge either way
+    if(!captcha.success){
+      logger.warning("captcha rejected login", { fn: "login", reason: captcha.message, ip: await getClientIp() });
+      return { success: false, message: captcha.message };
+    }
+
     const db = getDb();
 
     if(!password || !username) {
@@ -190,6 +165,13 @@ export async function signup(prevState: FormSate| undefined, formData: FormData)
     const username = formData.get('username') as string;
     const password = formData.get('password') as string;
     const rePassword = formData.get('re-password') as string;
+
+    const captcha = verifyCaptcha(formData);   // consumes the challenge either way
+    if(!captcha.success){
+      logger.warning("captcha rejected login", { fn: "signup", reason: captcha.message, ip: await getClientIp() });
+      return { success: false, message: captcha.message };
+    }
+
     const db = getDb();
     // validate password
     if(password != rePassword){
