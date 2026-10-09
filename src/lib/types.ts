@@ -395,3 +395,8 @@ export interface EbookViewerInfo extends Omit<Ebook, "copies" | "filename" | "de
   status: "returned" | "overdue" | "rent";
 }
 export const EbookViewerInfoFields: (keyof EbookViewerInfo)[] = ["ebook_id","isbn", "title", "author", "classification", "publisher", "status", "rental_date", "due_date"];
+
+export type FormSate = {
+  success: boolean;
+  message: string;
+}

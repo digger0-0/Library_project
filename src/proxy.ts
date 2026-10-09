@@ -1,26 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { logout, verifySession } from "./lib/auth";
+import { decryptSession, SESSION_MAX_AGE_MS } from "./lib/session";
 
-export default async function proxy(request: NextRequest) {
+function clearAuth(res: NextResponse) {
+  res.cookies.delete("session");
+  res.cookies.delete("username");
+  return res;
+}
+
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const session = request.cookies.get("session")?.value;
 
-  // user auth
-  if (pathname.startsWith("/user")) {
-    const data = await verifySession(false, session);
-    if (!data) {
-      logout();
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-  }
+  const isUser = pathname.startsWith("/user");
+  const isAdmin = pathname.startsWith("/admin");
+  if (!isUser && !isAdmin) return NextResponse.next();
 
-  // admin auth
-  if (pathname.startsWith("/admin")) {
-    const data = await verifySession(true, session);
-    if (!data || data.role !== "admin") {
-      logout();
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
+  const raw = request.cookies.get("session")?.value;
+  const data = raw ? decryptSession(raw, SESSION_MAX_AGE_MS) : null;
+
+  // The role is inside the encrypted payload, so the admin gate needs no DB.
+  const ok = isAdmin ? data?.role === "admin" : data !== null;
+
+  if (!ok) {
+    return clearAuth(NextResponse.redirect(new URL("/login", request.url)));
   }
 
   const response = NextResponse.next();

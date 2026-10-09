@@ -1,10 +1,11 @@
 import "server-only";
 import { existsSync, readdirSync, statSync, appendFileSync, rmSync, mkdirSync } from "node:fs";
-import { cwd } from "node:process";
 import path from "node:path";
 import { LogPriority, type Log } from "./types";
 
-const logPath = path.resolve(process.env.LOG_PATH || path.join(cwd(), "logs"));
+const logPath = path.resolve(
+  /* turbopackIgnore: true */ process.env.LOG_PATH ?? path.join(process.cwd(), "logs")
+);
 const logSize = Number(process.env.LOG_SIZE) || 1048576;
 const logKeep = Number(process.env.LOG_KEEP) || 5;
 const minPriority =
@@ -34,18 +35,21 @@ function serializeError(err: unknown): unknown {
 }
 
 export class Logger {
-  index: number;
-  indexes: number[];
-  logFile: string;
+  index = 0;
+  indexes: number[] = [];
+  logFile = "";
+  private ready = false;
 
-  constructor(){
-    mkdirSync(logPath, { recursive: true }); // first run: create src/logs
+  private ensure(){
+    if(this.ready) return;
+    mkdirSync(logPath, { recursive: true });
     this.indexes = readdirSync(logPath)
       .map((fn) => Number(fn.split(".").at(-1)))
       .filter((n) => Number.isFinite(n))
       .sort((a, b) => a - b);
     this.index = this.indexes.at(-1) ?? 1;
     this.logFile = `${logPath}/app.log.${this.index}`;
+    this.ready = true;
   }
 
   private rotateIfNeeded(){
@@ -63,6 +67,7 @@ export class Logger {
   }
 
   private run(level: string, msg: string, meta?: Record<string, unknown>, err?: unknown){
+    this.ensure();
     // log level filter
     const priority = LogPriority.get(level) ?? 40;
     if(priority < minPriority) return;

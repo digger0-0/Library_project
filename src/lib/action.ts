@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { verifySession } from "./auth";
-import { FormSate } from "./auth";
+import { FormSate } from "./types";
 import { getDb } from "./db";
 import { BookDetails, Classifications, EbookRental, NewEbook, NewEbookFields, Rental, User } from "./types";
 import { logger } from "./logger";
