@@ -1,6 +1,6 @@
 import { verifySession } from "@/lib/auth";
 import { getDb } from "@/lib/db";
-import { Announcement } from "@/lib/types";
+import { Announcement, INF } from "@/lib/types";
 import { InsertAnnouncementPanel } from "./admin/InsertAnnouncementPanel";
 import { AnnouncementThumbnail } from "./AnnouncementThumbnail";
 import { Suspense } from "react";
@@ -20,8 +20,8 @@ export default async function AnnouncementPanel({
 }){
   try{
     // clamp props
-    rowCount = clamp(rowCount, 1, 100, 10);
-    page = clamp(page, 1, Infinity);
+    rowCount = clamp(rowCount, 1, 100, 10, true);
+    page = clamp(page, 1, INF, 1, true);
     // fetch the announcements
     const db = getDb();
     let rows: Announcement[];

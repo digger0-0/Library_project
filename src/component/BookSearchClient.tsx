@@ -5,6 +5,7 @@ import { BookSearchDetail, BookSearchDetailFields } from "@/lib/types";
 import { useEffect, useState, useTransition } from "react";
 import { useToast } from "./Toast";
 import { BigWordPage } from "./bigWordPage";
+import Link from "next/link";
 
 export function BookSearchClient(
   { books, checkRented }:
@@ -45,6 +46,12 @@ export function BookSearchClient(
       {detailId != null && (
         <div className="enclose">
           <button className="btn" onClick={() => {setDetailId(null)}}>X</button>
+          <br/>
+          <Link className="btn" href={
+            books[detailId].bookType == "Ebook"?
+            `/ebookInfo/${books[detailId].ebook_id}`:
+            `/bookInfo/${books[detailId].isbn}`
+          }>View more</Link>
           { bookSearchDetailFields.map((f, i) => (
             <div key={i}>
               <label>{f.toString() + ": "}</label>

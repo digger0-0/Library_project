@@ -400,3 +400,44 @@ export type FormSate = {
   success: boolean;
   message: string;
 }
+
+export const MAX_COMMENT_LENGTH = 1000;
+export const INF = 100000;
+
+export interface Like {
+  like_id: number;
+  isbn: string | null;
+  ebook_id: number | null;
+  is_ebook: boolean;
+  user_id: number;
+  created_at: string;
+}
+
+export interface Comment {
+  comment_id: number;
+  isbn: string | null;
+  ebook_id: number | null;
+  is_ebook: boolean;
+  user_id: number;
+  created_at: string;
+  content: string;
+}
+
+export interface BookInfo {
+  isbn: string;
+  title: string;
+  author: string;
+  publisher: string;
+  full_classification: string;
+  class_icon: string;
+  likes_count: number;
+  comments_count: number;
+}
+
+export interface UserComment {
+  comment_id: number;
+  created_at: string;
+  content: string;
+  user_id: number;
+  username: string;
+}

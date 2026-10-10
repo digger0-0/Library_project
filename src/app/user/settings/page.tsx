@@ -5,7 +5,7 @@ import { useAuth } from "@/component/Auth";
 import { changePassword, changeUsername } from "@/lib/auth";
 import { ChangeEvent, useEffect, useState } from "react";
 
-export default function InfoPage(){
+export default function SettingsPage(){
   const [ newUsername, setNewUsername ] = useState<string>("");
   const [ username, setUsername ] = useState<string>("");
   const [ mode, setMode ] = useState<"password" | "username">("username");

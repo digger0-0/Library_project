@@ -98,6 +98,82 @@ export async function initDB() {
     );
   `);
 
+  // --- migration: rebuild likes/comments to add CHECK constraints -----------
+  // SQLite cannot ALTER TABLE ... ADD CONSTRAINT, so the shape/content CHECKs
+  // below can only be added by recreating the table. Detection is by the named
+  // constraint: a table that lacks it predates this schema and gets rebuilt.
+  //
+  // Rebuilding drops those rows, which is accepted here — likes/comments are
+  // low-value social data. It MUST stay conditional: initDB() also runs once per
+  // server start (see src/instrumentation.ts), so an unconditional DROP would
+  // wipe both tables on every boot. Dropping a table also drops its indexes;
+  // they are recreated below.
+  const needsRebuild = (table: string, marker: string) => {
+    const row = db.prepare(
+      "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?"
+    ).get(table) as { sql: string } | undefined;
+    return row !== undefined && !row.sql.includes(marker);
+  };
+  if(needsRebuild("likes", "ck_likes_shape"))       db.exec(`DROP TABLE likes;`);
+  if(needsRebuild("comments", "ck_comments_shape")) db.exec(`DROP TABLE comments;`);
+
+  // is_ebook selects the row shape and the CHECK enforces it: a book like carries
+  // an isbn and no ebook_id, an ebook like the reverse. This also pins is_ebook to
+  // {0,1} and closes the NULL hole in ux_likes_ebook, where an ebook row with
+  // ebook_id IS NULL was invisible to the UNIQUE index and so could duplicate.
+  // The ebook_id FOREIGN KEY is safe for both shapes: book rows have ebook_id
+  // NULL, and SQLite does not enforce an FK for NULL values.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS likes (
+      like_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+      isbn       CHAR(17),
+      ebook_id   INTEGER,
+      is_ebook   INTEGER NOT NULL,
+      user_id    INTEGER NOT NULL,
+      created_at DATETIME NOT NULL,
+      FOREIGN KEY (user_id)  REFERENCES users(user_id),
+      FOREIGN KEY (ebook_id) REFERENCES ebooks(ebook_id),
+      CONSTRAINT ck_likes_shape CHECK (
+        (is_ebook = 0 AND isbn IS NOT NULL AND ebook_id IS NULL) OR
+        (is_ebook = 1 AND isbn IS NULL     AND ebook_id IS NOT NULL)
+      )
+    );
+  `);
+
+  // Same shape rule as likes, plus a content guard: NOT NULL alone still allows
+  // an empty string. trim() takes only spaces unless given a character set, so
+  // the tabs/newlines in char(9,10,13,32) are spelled out — otherwise a comment
+  // of "\t" would pass. 1000 chars is the cap insertBookComment enforces.
+  // NOTE: a DB rebuilt by an earlier version of this migration won't pick up a
+  // change to this CHECK unless the rebuild marker below is bumped too.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS comments (
+      comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      isbn       CHAR(17),
+      ebook_id   INTEGER,
+      is_ebook   INTEGER NOT NULL,
+      user_id    INTEGER NOT NULL,
+      created_at DATETIME NOT NULL,
+      content    TEXT NOT NULL,
+      FOREIGN KEY (user_id)  REFERENCES users(user_id),
+      FOREIGN KEY (ebook_id) REFERENCES ebooks(ebook_id),
+      CONSTRAINT ck_comments_shape CHECK (
+        (is_ebook = 0 AND isbn IS NOT NULL AND ebook_id IS NULL) OR
+        (is_ebook = 1 AND isbn IS NULL     AND ebook_id IS NOT NULL)
+      ),
+      CONSTRAINT ck_comments_content CHECK (
+        length(trim(content, char(9,10,13,32))) BETWEEN 1 AND 1000
+      )
+    );
+  `);
+
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_likes_book  ON likes(isbn, user_id)             WHERE NOT is_ebook;
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_likes_ebook ON likes(ebook_id, user_id)         WHERE is_ebook;
+    CREATE INDEX IF NOT EXISTS ix_comments_book      ON comments(isbn, created_at DESC)     WHERE NOT is_ebook;
+    CREATE INDEX IF NOT EXISTS ix_comments_ebook     ON comments(ebook_id, created_at DESC) WHERE is_ebook;
+  `);
+
   db.exec(`DROP VIEW IF EXISTS book_details;`);
 
   db.exec(`

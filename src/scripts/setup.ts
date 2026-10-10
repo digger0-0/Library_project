@@ -202,6 +202,54 @@ The end.`);
     console.log(`✓ Demo ebooks created (3)`);
   }
 
+  // 7. Demo likes + comments on the sample books (only if there are none)
+  // Referenced by ISBN so the demo is stable across runs. The row shapes must
+  // satisfy ck_likes_shape / ck_comments_shape: a book row carries an isbn and NO
+  // ebook_id, an ebook row carries an ebook_id and NO isbn.
+  const likeCount = (db.prepare("SELECT COUNT(*) AS c FROM likes").get() as { c: number }).c;
+  if (likeCount === 0) {
+    const demo = db.prepare(
+      "SELECT user_id, username FROM users WHERE username IN ('alice','bob','carol')"
+    ).all() as { user_id: number; username: string }[];
+    const id = (name: string) => demo.find((u) => u.username === name)?.user_id;
+    const alice = id("alice"), bob = id("bob"), carol = id("carol");
+    const demoEbook = (db.prepare("SELECT ebook_id FROM ebooks WHERE isbn = ?")
+      .get("978-0-000-00010-1") as { ebook_id: number } | undefined)?.ebook_id;
+
+    if (alice != null && bob != null && carol != null && demoEbook != null) {
+      const like = db.prepare(
+        "INSERT INTO likes (isbn, ebook_id, is_ebook, user_id, created_at) VALUES (?, ?, ?, ?, ?)"
+      );
+      like.run("978-0-061-12008-4", null, 0, alice, addDays(-6));  // Mockingbird
+      like.run("978-0-14-143960-0", null, 0, alice, addDays(-3));  // Pride & Prejudice
+      like.run("978-0-061-12008-4", null, 0, bob,   addDays(-5));
+      like.run("978-0-140-44926-6", null, 0, carol, addDays(-2));  // The Odyssey
+      like.run(null, demoEbook, 1, alice, addDays(-1));
+      like.run(null, demoEbook, 1, carol, addDays(-1));
+
+      const comment = db.prepare(
+        "INSERT INTO comments (isbn, ebook_id, is_ebook, user_id, created_at, content) VALUES (?, ?, ?, ?, ?, ?)"
+      );
+      comment.run("978-0-061-12008-4", null, 0, alice, addDays(-6),
+        "The trial chapters are the heart of it — Atticus's closing speech is worth the whole book.");
+      comment.run("978-0-061-12008-4", null, 0, bob, addDays(-4),
+        "Read it in one sitting. Scout's narration makes a heavy subject feel close and human.");
+      comment.run("978-0-061-12008-4", null, 0, carol, addDays(-1),
+        "Borrowed this for a class and ended up reading well past the assigned chapters.");
+      comment.run("978-0-14-143960-0", null, 0, alice, addDays(-3),
+        "Austen's opening line is still the best joke in English fiction.");
+      comment.run("978-0-140-44926-6", null, 0, carol, addDays(-2),
+        "Slow at first, then you suddenly realise you have been holding your breath for three chapters.");
+      comment.run(null, demoEbook, 1, bob, addDays(-1),
+        "Handy that several copies are available at once — no waiting to borrow this one.");
+      console.log(`✓ Demo likes (6) + comments (6) created`);
+    } else {
+      console.log("⚠ demo users / demo ebook missing — demo likes skipped");
+    }
+  } else {
+    console.log("⚠ likes already exist — skipped");
+  }
+
   console.log("\n=== Setup complete ===");
   console.log("Admin login:  admin / admin");
   console.log("Demo users:   alice / alice123, bob / bob123, carol / carol123");

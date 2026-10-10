@@ -295,7 +295,7 @@ export async function changeUsername(newUsername: string): Promise<FormSate>{
     await signSession(userId, role);
 
     logger.info("Username changed", {fn: "changeUsername", userId, newUsername});
-    revalidatePath("/user/info/");
+    revalidatePath("/user/settings/");
     return { success: true, message: "Username changed" }
   }catch(err){
     logger.error("changeUsername failed", {
@@ -335,7 +335,7 @@ export async function changePassword(password: string, newPassword: string): Pro
     `).run(cipherNewPassword, user_id);
     
     logger.info("Password changed", {fn: "changePassword", user_id, newPassword});
-    revalidatePath("/user/info");
+    revalidatePath("/user/settings");
     return { success: true, message: "Password changed" };
   }catch(err){
     logger.error("changePassword failed", {

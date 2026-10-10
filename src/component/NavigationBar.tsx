@@ -54,7 +54,7 @@ export function NavigationBar(){
               <br/>
               <Link className="btn" href={"/user/rentalRecords"}>Rental Records</Link>
               <Link className="btn" href={"/user/ebook"}>Ebook</Link>
-              <Link className="btn" href={"/user/info"}>Info</Link>
+              <Link className="btn" href={"/user/settings"}>Info</Link>
             </>
           }
           {

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { verifySession } from "./auth";
 import { FormSate } from "./types";
 import { getDb } from "./db";
-import { BookDetails, Classifications, EbookRental, NewEbook, NewEbookFields, Rental, User } from "./types";
+import { BookDetails, Classifications, EbookRental, MAX_COMMENT_LENGTH, NewEbook, NewEbookFields, Rental, User } from "./types";
 import { logger } from "./logger";
 import { getClientIp } from "./request";
 import path from "node:path";
@@ -587,5 +587,110 @@ export async function deleteEbook(formState: FormSate | undefined, formData: For
       ebook_id: (formData.get("ebook_id")),
     }, err);
     return { success: false, message: `Ebook delete failed.` };
+  }
+}
+
+export async function updateLike(is_ebook: boolean, isbn?: string, ebook_id?: number): Promise<FormSate>{
+  try{
+    const _isbn = (is_ebook? null: isbn) ?? null;
+    const _ebook_id = (!is_ebook || ebook_id == null || !isFinite(ebook_id))? null: ebook_id;
+    // verify identity
+    const sessionData = await verifySession(true);
+    if(!sessionData){
+      logger.warning("unauthorised access", { fn: "updateLike", ip: await getClientIp() });
+      return { success: false, message: `Unauthorized access` };
+    }
+    // verify input
+    if(is_ebook? _ebook_id == null: !_isbn){
+      logger.warning("Incomplete input", {fn: "updateLike", is_ebook, isbn, ebook_id});
+      return { success: false, message: "Incomplete input" };
+    }
+    // verify isbn / ebook_id
+    const db = getDb();
+    const res = db.prepare(is_ebook?
+      `SELECT 1 FROM ebooks WHERE ebook_id = ?`:
+      `SELECT 1 FROM books WHERE isbn = ?;`
+    ).get(is_ebook? _ebook_id: _isbn);
+    if(!res){
+      logger.warning("Invalid input", {fn: "updateLike", is_ebook, isbn, ebook_id, user_id: sessionData.userId});
+      return { success: false, message: "Invalid input" };
+    }
+    const is_liked = db.prepare(`
+      SELECT like_id FROM likes WHERE user_id = ? AND is_ebook = ? AND ${is_ebook ? "ebook_id = ?" : "isbn = ?"};
+    `).get(sessionData.userId, Number(is_ebook), (is_ebook? _ebook_id: _isbn)) as { like_id: number } | undefined;
+
+    if(is_liked){
+      db.prepare(`DELETE FROM likes WHERE like_id = ?`).run(is_liked.like_id);
+      logger.info("Book unliked", {fn: "updateLike", is_ebook, isbn, ebook_id, user_id: sessionData.userId});
+      return { success: true, message: "Book unliked" };
+    }else{
+      db.prepare(`INSERT INTO likes (isbn, ebook_id, is_ebook, user_id, created_at) VALUES (?, ?, ?, ?, ?)`)
+        .run(_isbn, _ebook_id, Number(is_ebook), sessionData.userId, sqliteNow());
+      logger.info("Book liked", {fn: "updateLike", is_ebook, isbn, ebook_id, user_id: sessionData.userId});
+      return { success: true, message: "Book liked" };
+    }
+  }catch(err){
+    // The UNIQUE indexes on likes (ux_likes_book / ux_likes_ebook) make a second
+    // like from the same user impossible. Two requests racing past the SELECT
+    // above will land here — the like exists, so report it as already done
+    // rather than as a failure.
+    if((err as { code?: string })?.code === "SQLITE_CONSTRAINT_UNIQUE"){
+      logger.info("Book already liked", {fn: "updateLike", is_ebook, isbn, ebook_id});
+      return { success: true, message: "Book already liked" };
+    }
+    logger.error("updateLike failed", {
+      fn: "updateLike",
+      is_ebook, isbn, ebook_id,
+    }, err);
+    return { success: false, message: `Update like failed.` };
+  }
+}
+
+export async function insertBookComment(formState: FormSate | undefined, formData: FormData): Promise<FormSate>{
+  try{
+    const sessionData = await verifySession(true);
+    if(!sessionData){
+      logger.warning("unauthorised access", { fn: "insertBookComment", ip: await getClientIp() });
+      return { success: false, message: `Unauthorized access` };
+    }
+
+    const content = (formData.get("content") as string).trim();
+    const is_ebook = (formData.get("is_ebook") as string) == "true";
+    const isbn = formData.get("isbn") as string;
+    const ebook_id = Number(formData.get("ebook_id") as string);
+    if(!content || (!is_ebook && !isbn) || (is_ebook && !isFinite(ebook_id))){
+      logger.warning("Incomplete input", {fn: "insertBookComment", });
+      return { success: false, message: "Incomplete input" };
+    }
+    // Also enforced by ck_comments_content. Checked here so the user gets a
+    // usable message instead of the generic insert failure below.
+    if(content.length > MAX_COMMENT_LENGTH){
+      logger.warning("Comment too long", {fn: "insertBookComment", length: content.length, user_id: sessionData.userId});
+      return { success: false, message: `Comment must be at most ${MAX_COMMENT_LENGTH} characters` };
+    }
+
+    const db = getDb();
+    // verify isbn / ebook_id
+    const res = db.prepare(is_ebook?
+      `SELECT 1 FROM ebooks WHERE ebook_id = ?`:
+      `SELECT 1 FROM books WHERE isbn = ?;`
+    ).get(is_ebook? ebook_id: isbn);
+    if(!res){
+      logger.warning("Invalid input", {fn: "insertBookComment", isbn, user_id: sessionData.userId});
+      return { success: false, message: "Invalid input" };
+    }
+    // insert
+    db.prepare(`INSERT INTO comments (isbn, ebook_id, is_ebook, user_id, created_at, content) VALUES (?, ?, ?, ?, ?, ?)`)
+      .run((is_ebook? null: isbn), (is_ebook? ebook_id: null), Number(is_ebook), sessionData.userId, sqliteNow(), content);
+    logger.info("New book commet inserted", {fn: "insertBookComment", isbn, user_id: sessionData.userId});
+    return { success: true, message: "Book comment inserted" };
+  }catch(err){
+    logger.error("insert book comment failed", {
+      fn: "insertBookComment",
+      is_ebook: (formData.get("is_ebook") as string) == "true",
+      isbn: formData.get("isbn"),
+      ebook_id: formData.get("ebook_id")
+    }, err);
+    return { success: false, message: `insert book comment failed.` };
   }
 }
