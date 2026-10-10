@@ -96,6 +96,15 @@ cp -R .next/standalone/. "$DIST/app/"
 [ -d .next/static ] && mkdir -p "$DIST/app/.next/static" && cp -R .next/static/. "$DIST/app/.next/static/"
 [ -d public ] && cp -R public/. "$DIST/app/public/"
 
+# Strip the build machine's .env. Next's output tracing copies it — including the
+# real SESSION_SECRET — into the standalone output, so shipping it would hand a
+# working secret to everyone who unzips the release: they could mint valid admin
+# session cookies. Ship the template instead; start.sh generates a per-install
+# .env (via ensure-env.mjs) on first launch.
+rm -f "$DIST/app/.env"
+cp "$PROJECT_DIR/.env.example"      "$DIST/app/.env.example"
+cp "$PROJECT_DIR/scripts/ensure-env.mjs" "$DIST/app/ensure-env.mjs"
+
 # Compile the setup script into a single JS bundle and ship it.
 # The bundled server will run it on first launch to create the DB
 # (admin + demo data) ON THE TARGET MACHINE — not a build-time snapshot.
@@ -127,6 +136,15 @@ echo "Starting Library Project..."
 # (server finds .next, and db.ts finds library.db next to server.js)
 cd "$DIR/app"
 
+# First launch: generate .env from .env.example with a fresh SESSION_SECRET.
+# No-op once .env exists, so your edited config is never overwritten.
+# Required before the server starts: src/lib/session.ts hashes SESSION_SECRET
+# at import time and throws without it.
+if [ ! -f .env ]; then
+  echo "First run detected — generating .env..."
+  "$DIR/node/bin/node" ensure-env.mjs || { echo "Could not create .env"; exit 1; }
+fi
+
 # First launch: create the database (tables + admin + demo data)
 if [ ! -f library.db ]; then
   echo "First run detected — running initial setup..."
@@ -138,6 +156,14 @@ EOF
 chmod +x "$DIST/start.sh"
 
 # --- 6. zip --------------------------------------------------------------------
+# Refuse to ship a bundle carrying a real .env — this is the check that would
+# have caught the SESSION_SECRET leak, so keep it before the zip.
+if [ -f "$DIST/app/.env" ]; then
+  fail "refusing to build: app/.env is present and would leak SESSION_SECRET"
+fi
+[ -f "$DIST/app/.env.example" ]   || fail "app/.env.example missing from the bundle"
+[ -f "$DIST/app/ensure-env.mjs" ] || fail "app/ensure-env.mjs missing from the bundle"
+
 info "Creating $ZIP_NAME"
 cd "$DIST"
 rm -f "$ZIP_NAME"
@@ -147,3 +173,4 @@ echo
 echo "Done! Your portable build is at: dist/$ZIP_NAME"
 echo "To run on a macOS ${ARCH} machine: unzip, then ./start.sh"
 echo "Bundled Node ${NODE_VERSION} (macOS 10.15+) — compatible with macOS 13 Ventura"
+echo "SESSION_SECRET is generated on first launch by start.sh, not shipped."
