@@ -1,0 +1,12 @@
+# Line-ending rules for scripts that are sensitive to them.
+#
+# Without this, a Windows checkout with core.autocrlf=true rewrites every text
+# file to CRLF: start.sh would fail with "bad interpreter: /bin/sh^M", and a
+# .cmd rewritten to LF is mis-parsed by cmd.exe.
+
+# The shebang must not gain a \r, so keep shell scripts LF even on Windows.
+*.sh text eol=lf
+
+# cmd.exe mis-parses LF-only batch files.
+*.cmd text eol=crlf
+*.bat text eol=crlf

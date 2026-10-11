@@ -20,8 +20,17 @@
   Target architecture: x64 (default) or arm64.
 
 .EXAMPLE
-  powershell -ExecutionPolicy Bypass -File scripts\build-portable.ps1
-  powershell -ExecutionPolicy Bypass -File scripts\build-portable.ps1 -Arch arm64
+  REM Easiest: a default Windows install has script execution disabled, so
+  REM running this .ps1 directly fails with a PSSecurityException. Use the
+  REM launcher, which passes -ExecutionPolicy Bypass for you:
+  scripts\build-portable.cmd
+
+  REM Or invoke it yourself:
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-portable.ps1
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-portable.ps1 -Arch arm64
+
+  REM To stop passing the flag, allow local scripts for your account only:
+  Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 .OUTPUTS
   dist\LibraryProject-portable-win-<arch>.zip
@@ -72,11 +81,12 @@ function Copy-Tree([string]$From, [string]$To, [string[]]$ExcludeDirs, [string[]
 if (-not (Test-Path (Join-Path $ProjectDir "package.json"))) {
   Fail "package.json not found -- run this from the project tree"
 }
-if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-  Fail "npm not found on PATH (the host needs a Node/npm to bootstrap the build)"
-}
+# No host Node/npm is required: the portable runtime downloaded below supplies
+# both, and every child process is run through it. Do not add a `Get-Command npm`
+# check here -- it would block a clean Windows machine for no reason.
 
 # --- 1. portable node (download first, drive the whole build with it) ---------
+
 Info "Fetching portable Node $NodeVersion ($OsName-$Arch)"
 if (Test-Path $Dist) { Remove-Item -Recurse -Force $Dist }
 New-Item -ItemType Directory -Path $Dist | Out-Null

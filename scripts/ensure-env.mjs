@@ -23,7 +23,9 @@ const envPath = path.join(appDir, ".env");
 const examplePath = path.join(appDir, ".env.example");
 
 if (existsSync(envPath)) {
-  console.log(".env already exists — leaving it untouched.");
+  // ASCII only: this runs in the user's console, and the Windows codepage would
+  // render an em dash as mojibake.
+  console.log(".env already exists - leaving it untouched.");
   process.exit(0);
 }
 
