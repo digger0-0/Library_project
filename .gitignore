@@ -39,8 +39,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# SQLite database
-/library.db
+# SQLite database. The trailing * also covers backups and WAL sidecars such as
+# library.db.userbak, which hold live session tokens and must never be committed.
+/library.db*
 *.db-shm
 *.db-wal
 

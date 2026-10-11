@@ -1,18 +1,19 @@
+/**
+ * The classification scheme — the one piece of data that is genuinely
+ * structural: books carry a FOREIGN KEY to it, and the search filters are built
+ * from it. It is inserted with INSERT OR IGNORE, so re-running setup never
+ * disturbs it.
+ *
+ * The sample catalogue (books, ebooks) and everything demo-related lives in
+ * demo-data.ts instead: those are content you would replace on a real
+ * deployment, not part of the scheme.
+ */
 import { getDb } from "./db";
 
 interface ClassificationSeed {
   code: string;       // e.g. "eng-000" or "chi-000"
   description: string;
   icon: string;
-}
-
-interface BookSeed {
-  isbn: string;
-  book_number: string;
-  title: string;
-  author: string;
-  publisher: string;
-  classification: string;
 }
 
 // ──────────────────────────────────────────────
@@ -230,38 +231,11 @@ const chineseClassifications: ClassificationSeed[] = [
 ];
 
 // ──────────────────────────────────────────────
-//  Sample Books (20)
-// ──────────────────────────────────────────────
-const sampleBooks: BookSeed[] = [
-  { isbn: "978-0-141-03963-9", book_number: "1", title: "1984",                        author: "George Orwell",          publisher: "Penguin Books",           classification: "eng-800" },
-  { isbn: "978-0-061-12008-4", book_number: "1", title: "To Kill a Mockingbird",       author: "Harper Lee",             publisher: "HarperCollins",           classification: "eng-800" },
-  { isbn: "978-0-743-27356-5", book_number: "1", title: "The Great Gatsby",            author: "F. Scott Fitzgerald",    publisher: "Scribner",                classification: "eng-800" },
-  { isbn: "978-0-452-28423-4", book_number: "1", title: "Brave New World",             author: "Aldous Huxley",          publisher: "Harper Perennial",        classification: "eng-800" },
-  { isbn: "978-0-140-44926-6", book_number: "1", title: "The Odyssey",                 author: "Homer",                  publisher: "Penguin Classics",        classification: "eng-880" },
-  { isbn: "978-0-521-67543-1", book_number: "1", title: "A Brief History of Time",     author: "Stephen Hawking",        publisher: "Bantam Books",            classification: "eng-530" },
-  { isbn: "978-0-465-06710-7", book_number: "1", title: "The Selfish Gene",            author: "Richard Dawkins",        publisher: "Oxford University Press", classification: "eng-570" },
-  { isbn: "978-0-393-35730-5", book_number: "1", title: "Silent Spring",               author: "Rachel Carson",          publisher: "Mariner Books",           classification: "eng-630" },
-  { isbn: "978-0-14-143960-0", book_number: "1", title: "Pride and Prejudice",         author: "Jane Austen",            publisher: "Penguin Classics",        classification: "eng-800" },
-  { isbn: "978-0-307-47769-1", book_number: "1", title: "The Catcher in the Rye",      author: "J.D. Salinger",          publisher: "Back Bay Books",          classification: "eng-800" },
-  { isbn: "978-988-97022-8-1", book_number: "1", title: "香港的故事",                  author: "陳冠中",                 publisher: "牛津大學出版社",           classification: "chi-620" },
-  { isbn: "978-988-85073-4-8", book_number: "1", title: "香港方物志",                  author: "葉靈鳳",                 publisher: "香港三聯書店",            classification: "chi-670" },
-  { isbn: "978-962-04382-5-9", book_number: "1", title: "中國現代史",                  author: "張玉法",                 publisher: "東華書局",               classification: "chi-610" },
-  { isbn: "978-957-32654-3-2", book_number: "1", title: "哲學概論",                    author: "傅佩榮",                 publisher: "天下文化",                classification: "chi-100" },
-  { isbn: "978-957-11684-0-5", book_number: "1", title: "普通心理學",                  author: "游恆山",                 publisher: "五南圖書",                classification: "chi-170" },
-  { isbn: "978-986-359-782-3", book_number: "1", title: "紅樓夢",                      author: "曹雪芹",                 publisher: "時報出版",                classification: "chi-850" },
-  { isbn: "978-986-406-374-6", book_number: "1", title: "三體",                        author: "劉慈欣",                 publisher: "貓頭鷹出版",              classification: "chi-857" },
-  { isbn: "978-962-678-740-3", book_number: "1", title: "香港中藥材圖鑑",              author: "李甯漢",                 publisher: "香港中文大學出版社",       classification: "chi-410" },
-  { isbn: "978-957-08634-5-9", book_number: "1", title: "臺灣史",                      author: "戚嘉林",                 publisher: "海峽學術",                classification: "chi-620" },
-  { isbn: "978-988-23713-4-7", book_number: "1", title: "香港地鐵地圖",                author: "三采文化",               publisher: "三采文化出版事業有限公司", classification: "chi-660" },
-];
-
-// ──────────────────────────────────────────────
 //  Import function
 // ──────────────────────────────────────────────
-export function seedDatabase() {
+export function seedClassifications() {
   const db = getDb();
 
-  // Insert classifications
   const insertClass = db.prepare(
     "INSERT OR IGNORE INTO classifications (classification, description, class_icon) VALUES (?, ?, ?)"
   );
@@ -271,15 +245,4 @@ export function seedDatabase() {
     insertClass.run(c.code, c.description, c.icon);
   }
   console.log(`Inserted ${allClassifications.length} classifications.`);
-
-  // Insert books
-  const insertBook = db.prepare(
-    `INSERT OR IGNORE INTO books (isbn, book_number, title, author, publisher, classification)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  );
-
-  for (const b of sampleBooks) {
-    insertBook.run(b.isbn, b.book_number, b.title, b.author, b.publisher, b.classification);
-  }
-  console.log(`Inserted ${sampleBooks.length} books.`);
 }
