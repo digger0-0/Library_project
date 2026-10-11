@@ -82,8 +82,8 @@ if (-not (Test-Path (Join-Path $ProjectDir "package.json"))) {
   Fail "package.json not found -- run this from the project tree"
 }
 # No host Node/npm is required: the portable runtime downloaded below supplies
-# both, and every child process is run through it. Do not add a `Get-Command npm`
-# check here -- it would block a clean Windows machine for no reason.
+# both, and every child process is run through it. Do not add a Get-Command npm
+# check here -- it would block otherwise-clean Windows machines for no reason.
 
 # --- 1. portable node (download first, drive the whole build with it) ---------
 
@@ -239,13 +239,52 @@ foreach ($Required in @(".env.example", "ensure-env.mjs")) {
 Info "Creating $ZipName"
 # The downloaded Node archive must not end up in the release.
 if (Test-Path $NodeZip) { Remove-Item -Force $NodeZip }
+
 $ZipPath = Join-Path $Dist $ZipName
-if (Test-Path $ZipPath) { Remove-Item -Force $ZipPath }
-# ZipFile::CreateFromDirectory rather than Compress-Archive: the latter skips
-# files carrying the Hidden attribute and fails on paths over 260 chars.
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::CreateFromDirectory(
-  $Dist, $ZipPath, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+# ZipFile.Open(..., Create) maps to FileMode.CreateNew, so it THROWS when the
+# target already exists -- unlike zip(1), which overwrites. Replace it first, and
+# say something useful if a viewer or scanner is holding it open.
+if (Test-Path $ZipPath) {
+  try { Remove-Item -Force $ZipPath -ErrorAction Stop }
+  catch { Fail "cannot replace $ZipPath -- close it if it is open in Explorer or a zip tool, then retry" }
+}
+
+# Name the three entries explicitly, mirroring the .sh flow's
+# `zip -rq "$ZIP_NAME" node app start.sh`.
+#
+# Do NOT use ZipFile::CreateFromDirectory($Dist, ...) here. It opens the
+# destination archive before enumerating the source, and the destination lives
+# inside $Dist, so it tries to add itself to itself and dies with
+#
+#   IOException: The process cannot access the file '...portable-win-x64.zip'
+#                because it is being used by another process
+#
+# Zipping the whole of $Dist would also sweep in anything else left there.
+# The type sits in different assemblies across PowerShell 5.1 and 7.
+foreach ($Assembly in @("System.IO.Compression", "System.IO.Compression.FileSystem")) {
+  try { Add-Type -AssemblyName $Assembly -ErrorAction Stop } catch { }
+}
+
+$Archive = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+try {
+  foreach ($Dir in @("app", "node")) {
+    $Base = Join-Path $Dist $Dir
+    Get-ChildItem -LiteralPath $Base -Recurse -File -Force | ForEach-Object {
+      # zip entry names always use forward slashes
+      $Rel = $_.FullName.Substring($Base.Length).TrimStart([char]'\') -replace '\\', '/'
+      [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+        $Archive, $_.FullName, "$Dir/$Rel",
+        [System.IO.Compression.CompressionLevel]::Optimal)
+    }
+  }
+  [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+    $Archive, (Join-Path $Dist "start.cmd"), "start.cmd",
+    [System.IO.Compression.CompressionLevel]::Optimal)
+} finally {
+  # Must run before anything reports on the file: the central directory is only
+  # written on dispose, so the size is wrong until then.
+  $Archive.Dispose()
+}
 
 Write-Host ""
 Write-Host "Done! Your portable build is at: dist\$ZipName"
