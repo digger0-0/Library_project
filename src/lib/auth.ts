@@ -7,7 +7,7 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { logger } from "./logger";
 import { getClientIp } from "./request";
-import { decryptSession, ALGORITHM, SECRET, SESSION_MAX_AGE_MS } from "./session";
+import { decryptSession, ALGORITHM, getSecret, SESSION_MAX_AGE_MS } from "./session";
 import { FormSate } from "./types";
 import { verifyCaptcha } from "./captcha";
 
@@ -34,7 +34,7 @@ export async function signSession(
     const user = db.prepare('SELECT username FROM users WHERE user_id = ?').get(userId) as {username: string};
     if(!user) return null;
     // create cipher
-    const cipher = crypto.createCipheriv(ALGORITHM, SECRET, iv);
+    const cipher = crypto.createCipheriv(ALGORITHM, getSecret(), iv);
     let encrypted = cipher.update(payload, "utf8", "hex");
     encrypted += cipher.final("hex");
     const session = `${iv.toString('hex')}|${encrypted}`;
