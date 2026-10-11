@@ -11,10 +11,6 @@ import { decryptSession, ALGORITHM, getSecret, SESSION_MAX_AGE_MS } from "./sess
 import { FormSate } from "./types";
 import { verifyCaptcha } from "./captcha";
 
-if(!process.env.SESSION_SECRET){
-  logger.fatal("missing session secret", {fn: "auth.ts"});
-}
-
 const SALT = "salt";
 
 const MAXAGEMS = 24 * 60 * 60 * 1000;

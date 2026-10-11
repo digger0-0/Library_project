@@ -23,8 +23,20 @@ export async function register() {
   // lazily below so it never enters an edge bundle.
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
-  const { initDB } = await import("./lib/db-init");
   const { logger } = await import("./lib/logger");
+
+  // Checked here rather than at module scope in auth.ts. This hook runs when the
+  // server process starts, but NOT during `next build` -- and a build legitimately
+  // has no .env, so a module-scope check logged "fatal" once per build worker and
+  // made a working build look broken. getSecret() still throws on first use.
+  if (!process.env.SESSION_SECRET) {
+    logger.fatal("SESSION_SECRET is not set - sessions cannot be signed or verified", {
+      fn: "instrumentation.register",
+      hint: "see .env.example; portable builds generate it via ensure-env.mjs",
+    });
+  }
+
+  const { initDB } = await import("./lib/db-init");
 
   try {
     await initDB();
